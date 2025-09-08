@@ -312,15 +312,28 @@ class TimeTetrisApp {
                 
                 // 시간 슬롯 표시
                 const slotsContainer = document.getElementById('availableSlots');
-                slotsContainer.innerHTML = schedule.availableSlots.map((slot, index) => `
-                    <div class="time-slot">
-                        <input type="datetime-local" class="slot-datetime" value="${this.toDateTimeLocal(slot.datetime)}">
-                        <input type="number" class="slot-duration" placeholder="분" min="10" max="480" value="${slot.duration}">
-                        <button type="button" class="btn btn-sm btn-danger" onclick="app.removeTimeSlot(this)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `).join('');
+                slotsContainer.innerHTML = schedule.availableSlots.map((slot, index) => {
+                    const startDate = new Date(slot.datetime);
+                    const endDate = new Date(startDate.getTime() + slot.duration * 60000);
+                    
+                    return `
+                        <div class="time-slot">
+                            <div class="time-slot-inputs">
+                                <div class="time-input-group">
+                                    <label class="time-input-label">시작</label>
+                                    <input type="datetime-local" class="slot-start-datetime" value="${this.toDateTimeLocal(slot.datetime)}">
+                                </div>
+                                <div class="time-input-group">
+                                    <label class="time-input-label">종료</label>
+                                    <input type="datetime-local" class="slot-end-datetime" value="${this.toDateTimeLocal(endDate.toISOString())}">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="app.removeTimeSlot(this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
                 
                 if (schedule.availableSlots.length === 0) {
                     this.addTimeSlot();
@@ -351,14 +364,36 @@ class TimeTetrisApp {
         
         // 시간 슬롯 수집
         const availableSlots = [];
-        document.querySelectorAll('#availableSlots .time-slot').forEach(slot => {
-            const datetime = slot.querySelector('.slot-datetime').value;
-            const duration = parseInt(slot.querySelector('.slot-duration').value) || 60;
+        let hasInvalidSlot = false;
+        
+        document.querySelectorAll('#availableSlots .time-slot').forEach((slot, index) => {
+            const startDatetime = slot.querySelector('.slot-start-datetime').value;
+            const endDatetime = slot.querySelector('.slot-end-datetime').value;
             
-            if (datetime) {
-                availableSlots.push({ datetime, duration });
+            if (startDatetime && endDatetime) {
+                const start = new Date(startDatetime);
+                const end = new Date(endDatetime);
+                
+                // 종료 시간이 시작 시간보다 늦은지 확인
+                if (end > start) {
+                    const duration = Math.round((end.getTime() - start.getTime()) / 60000); // 분 단위로 계산
+                    availableSlots.push({ 
+                        datetime: startDatetime, 
+                        duration: duration 
+                    });
+                } else {
+                    hasInvalidSlot = true;
+                    this.showNotification(`${index + 1}번째 시간대: 종료 시간이 시작 시간보다 늦어야 합니다.`, 'error');
+                }
+            } else if (startDatetime || endDatetime) {
+                hasInvalidSlot = true;
+                this.showNotification(`${index + 1}번째 시간대: 시작 시간과 종료 시간을 모두 입력해주세요.`, 'error');
             }
         });
+        
+        if (hasInvalidSlot) {
+            return;
+        }
 
         const scheduleData = {
             name,
@@ -397,8 +432,16 @@ class TimeTetrisApp {
         const slotDiv = document.createElement('div');
         slotDiv.className = 'time-slot';
         slotDiv.innerHTML = `
-            <input type="datetime-local" class="slot-datetime">
-            <input type="number" class="slot-duration" placeholder="분" min="10" max="480" value="60">
+            <div class="time-slot-inputs">
+                <div class="time-input-group">
+                    <label class="time-input-label">시작</label>
+                    <input type="datetime-local" class="slot-start-datetime">
+                </div>
+                <div class="time-input-group">
+                    <label class="time-input-label">종료</label>
+                    <input type="datetime-local" class="slot-end-datetime">
+                </div>
+            </div>
             <button type="button" class="btn btn-sm btn-danger" onclick="app.removeTimeSlot(this)">
                 <i class="fas fa-trash"></i>
             </button>
