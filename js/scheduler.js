@@ -1,12 +1,48 @@
-// 스케줄 자동 배치 알고리즘
-
+/**
+ * Scheduler 클래스
+ * 
+ * TimeTetris 애플리케이션의 핵심 자동 배치 알고리즘을 담당하는 클래스입니다.
+ * 일정(Schedule)들을 세션(Session)에 최적으로 배치하는 다양한 알고리즘을 제공합니다.
+ * 
+ * 주요 책임:
+ * - 일정과 세션 간의 시간 호환성 검증
+ * - 우선순위 기반 자동 배치 알고리즘 실행
+ * - Greedy 알고리즘과 백트래킹 알고리즘 제공
+ * - 배치 결과 통계 및 분석
+ * - 배치 최적화 점수 계산
+ * - 사용자를 위한 배치 개선 제안 생성
+ * 
+ * 알고리즘 종류:
+ * 1. Greedy 알고리즘 (기본): 빠르고 효율적, 대용량 데이터 처리 가능
+ * 2. 백트래킹 알고리즘 (최적화): 소규모 데이터에서 최적해 보장
+ * 3. Fisher-Yates 셔플: 공정한 무작위 배치 보장
+ * 
+ * 배치 전략:
+ * - 우선순위 높은 일정 우선 배치
+ * - 1:1 세션만 지원 (한 세션에 최대 1개 일정)
+ * - 시간대 완전 포함 검증 (세션 시간이 일정 가능 시간 내에 완전히 포함)
+ * - 활성화된 세션만 배치 대상
+ * 
+ * 성능 고려사항:
+ * - 20개 이하 일정 & 10개 이하 세션: 백트래킹 사용
+ * - 그 이상: Greedy 알고리즘 사용
+ */
 class Scheduler {
+    /**
+     * Scheduler 생성자
+     * @param {DataStore} dataStore - 일정과 세션 데이터를 관리하는 DataStore 인스턴스
+     */
     constructor(dataStore) {
+        /** @type {DataStore} 데이터 저장소 참조 */
         this.dataStore = dataStore;
     }
 
     /**
-     * Fisher-Yates 셔플 알고리즘을 사용한 무작위 배치
+     * Fisher-Yates 셔플 알고리즘을 사용한 배열 무작위 섞기
+     * 공정한 배치를 위해 가능한 세션 목록을 무작위로 섞습니다.
+     * 
+     * @param {Array} array - 섞을 배열
+     * @returns {Array} 섞인 새로운 배열
      */
     shuffle(array) {
         const arr = [...array];
@@ -18,7 +54,17 @@ class Scheduler {
     }
 
     /**
-     * 자동 배치 실행
+     * 메인 자동 배치 실행 함수 (Greedy 알고리즘)
+     * 
+     * 알고리즘 단계:
+     * 1. 기존 모든 배치 초기화
+     * 2. 활성화된 세션과 모든 일정 수집
+     * 3. 우선순위 기준으로 일정 정렬 (높은 순)
+     * 4. 각 일정별 가능한 세션 목록 생성
+     * 5. 최대 매칭 알고리즘으로 배치 실행
+     * 6. 결과 저장 및 통계 반환
+     * 
+     * @returns {Object} 배치 결과 - {assigned: number, failed: number}
      */
     autoAssign() {
         // 기존 배치 초기화
@@ -68,7 +114,11 @@ class Scheduler {
     }
 
     /**
-     * 각 일정에 대해 가능한 세션 찾기
+     * 각 일정에 대해 배치 가능한 세션 목록 생성
+     * 
+     * @param {Schedule[]} schedules - 배치할 일정들
+     * @param {Session[]} sessions - 사용 가능한 세션들
+     * @returns {Map<string, string[]>} 일정ID -> 가능한 세션ID 배열 매핑
      */
     findPossibleAssignments(schedules, sessions) {
         const possibleAssignments = new Map();
@@ -82,7 +132,7 @@ class Scheduler {
                 }
             });
 
-            // 무작위 순서로 섞기
+            // 무작위 순서로 섞어서 공정한 배치 보장
             possibleAssignments.set(schedule.id, this.shuffle(possibleSessions));
         });
 
@@ -90,7 +140,16 @@ class Scheduler {
     }
 
     /**
-     * 일정이 세션에 배치 가능한지 확인
+     * 특정 일정이 특정 세션에 배치 가능한지 검증
+     * 
+     * 검증 조건:
+     * 1. 세션이 활성화되어 있어야 함
+     * 2. 세션에 여유 용량이 있어야 함
+     * 3. 세션 시간이 일정의 가능한 시간대 내에 완전히 포함되어야 함
+     * 
+     * @param {Schedule} schedule - 검증할 일정
+     * @param {Session} session - 검증할 세션
+     * @returns {boolean} 배치 가능하면 true
      */
     canAssignToSession(schedule, session) {
         if (!session.enabled || !session.hasCapacity()) {
@@ -102,7 +161,15 @@ class Scheduler {
     }
 
     /**
-     * 최대 매칭 찾기 (Greedy 알고리즘 사용)
+     * 최대 매칭 알고리즘 (Greedy 방식)
+     * 
+     * 우선순위 순서로 일정을 처리하며, 각 일정에 대해 
+     * 사용 가능한 첫 번째 세션에 배치합니다.
+     * 
+     * @param {Map} possibleAssignments - 일정별 가능한 세션 목록
+     * @param {Schedule[]} schedules - 우선순위 정렬된 일정 배열
+     * @param {Session[]} sessions - 사용 가능한 세션 배열
+     * @returns {Map<string, string|null>} 일정ID -> 배치된 세션ID 매핑
      */
     findMaximumMatching(possibleAssignments, schedules, sessions) {
         const assignments = new Map();
@@ -131,8 +198,13 @@ class Scheduler {
     }
 
     /**
-     * 더 정교한 배치 알고리즘 (백트래킹 사용)
-     * 성능 문제로 작은 데이터셋에서만 사용
+     * 최적화된 배치 알고리즘 (백트래킹 포함)
+     * 
+     * 데이터 크기에 따라 알고리즘 선택:
+     * - 소규모 (일정 ≤20, 세션 ≤10): 백트래킹으로 최적해 탐색
+     * - 대규모: Greedy 알고리즘으로 빠른 처리
+     * 
+     * @returns {Object} 배치 결과 - {assigned: number, failed: number}
      */
     optimizedAssign() {
         const sessions = this.dataStore.getAllSessions().filter(s => s.enabled);
@@ -153,6 +225,13 @@ class Scheduler {
 
     /**
      * 백트래킹을 사용한 최적 배치 찾기
+     * 
+     * 모든 가능한 배치 조합을 탐색하여 최대한 많은 일정을 배치하는
+     * 최적해를 찾습니다. 계산 복잡도가 높아 소규모 데이터에서만 사용합니다.
+     * 
+     * @param {Schedule[]} schedules - 배치할 일정들
+     * @param {Session[]} sessions - 사용 가능한 세션들
+     * @returns {Object} 배치 결과 - {assigned: number, failed: number}
      */
     backtrackingAssign(schedules, sessions) {
         this.dataStore.clearAllAssignments();
@@ -161,9 +240,9 @@ class Scheduler {
         const assignments = new Map();
         const sessionCapacity = new Map();
 
-        // 세션 용량 초기화
+        // 세션 용량 초기화 (현재는 1:1 세션만 지원)
         sessions.forEach(session => {
-            sessionCapacity.set(session.id, 1); // 1:1 세션
+            sessionCapacity.set(session.id, 1);
         });
 
         const bestAssignment = this.backtrack(
@@ -201,6 +280,17 @@ class Scheduler {
 
     /**
      * 백트래킹 재귀 함수
+     * 
+     * 깊이 우선 탐색으로 모든 가능한 배치를 시도하며,
+     * 현재까지 찾은 최적해보다 더 좋은 해를 발견하면 업데이트합니다.
+     * 
+     * @param {number} index - 현재 처리 중인 일정 인덱스
+     * @param {Schedule[]} schedules - 처리할 일정 배열
+     * @param {Session[]} sessions - 사용 가능한 세션 배열
+     * @param {Map} assignments - 현재 배치 상태
+     * @param {Map} sessionCapacity - 세션별 남은 용량
+     * @param {Object} result - 최적 결과 저장 객체
+     * @returns {Object} 최적 배치 결과
      */
     backtrack(index, schedules, sessions, assignments, sessionCapacity, result) {
         if (index === schedules.length) {
@@ -227,7 +317,7 @@ class Scheduler {
                 // 재귀 호출
                 this.backtrack(index + 1, schedules, sessions, assignments, sessionCapacity, result);
 
-                // 백트래킹
+                // 백트래킹 (상태 복원)
                 assignments.delete(schedule.id);
                 sessionCapacity.set(session.id, sessionCapacity.get(session.id) + 1);
             }
@@ -242,7 +332,15 @@ class Scheduler {
     }
 
     /**
-     * 시간 충돌 확인
+     * 시간 충돌 확인 함수
+     * 
+     * 현재 구현에서는 1:1 세션만 지원하므로 충돌이 발생하지 않습니다.
+     * 향후 그룹 세션 지원 시 활용될 예정입니다.
+     * 
+     * @param {Schedule} schedule1 - 첫 번째 일정
+     * @param {Schedule} schedule2 - 두 번째 일정
+     * @param {Session} session - 확인할 세션
+     * @returns {boolean} 충돌이 있으면 true
      */
     hasTimeConflict(schedule1, schedule2, session) {
         // 현재 구현에서는 한 세션에 한 명만 배치하므로 충돌 없음
@@ -250,7 +348,14 @@ class Scheduler {
     }
 
     /**
-     * 배치 통계 계산
+     * 배치 결과 통계 계산
+     * 
+     * 다양한 관점에서 배치 결과를 분석합니다:
+     * - 전체 배치율
+     * - 우선순위별 배치 현황
+     * - 세션별 활용도
+     * 
+     * @returns {Object} 상세 통계 정보
      */
     getAssignmentStatistics() {
         const stats = {
@@ -307,7 +412,13 @@ class Scheduler {
     }
 
     /**
-     * 배치 제안 생성 (사용자에게 대안 제시)
+     * 배치 개선 제안 생성
+     * 
+     * 현재 배치 상태를 분석하여 사용자에게 유용한 개선 제안을 생성합니다:
+     * - 미배치 일정에 대한 해결책 제안
+     * - 미사용 세션에 대한 활용 방안 제안
+     * 
+     * @returns {Array} 제안 목록
      */
     generateSuggestions() {
         const suggestions = [];
@@ -346,6 +457,15 @@ class Scheduler {
 
     /**
      * 배치 최적화 점수 계산
+     * 
+     * 배치 품질을 정량적으로 평가하는 종합 점수를 계산합니다.
+     * 
+     * 평가 기준 (총 100점):
+     * - 전체 배치율 (40점): 얼마나 많은 일정이 배치되었는가
+     * - 세션 활용률 (30점): 얼마나 많은 세션이 활용되었는가  
+     * - 우선순위 준수율 (30점): 높은 우선순위 일정이 우선 배치되었는가
+     * 
+     * @returns {Object} 점수 및 세부 분석 정보
      */
     calculateOptimizationScore() {
         const stats = this.getAssignmentStatistics();
@@ -395,6 +515,7 @@ class Scheduler {
 }
 
 // 전역 스케줄러 인스턴스 생성
+// TimeTetrisApp이 로드된 후 자동으로 스케줄러를 초기화합니다.
 document.addEventListener('DOMContentLoaded', () => {
     if (window.app && window.app.dataStore) {
         window.app.scheduler = new Scheduler(window.app.dataStore);

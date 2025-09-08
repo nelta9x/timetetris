@@ -796,3 +796,42 @@ body {
     color: var(--success-color);
     border-color: rgba(16, 185, 129, 0.3);
 }
+
+/* Time Slot Input Styles */
+.time-slot-inputs {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex: 1;
+}
+
+.time-input-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.time-input-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.slot-start-datetime,
+.slot-end-datetime {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    background: var(--bg-primary);
+    transition: var(--transition);
+}
+
+.slot-start-datetime:focus,
+.slot-end-datetime:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}

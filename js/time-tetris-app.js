@@ -1,14 +1,56 @@
-// 메인 애플리케이션 클래스
-
+/**
+ * TimeTetrisApp 클래스
+ * 
+ * TimeTetris 애플리케이션의 메인 컨트롤러 클래스입니다.
+ * 사용자 인터페이스와 비즈니스 로직을 연결하며, 모든 화면과 기능을 관리합니다.
+ * 
+ * 주요 책임:
+ * - 애플리케이션 초기화 및 전역 상태 관리
+ * - 사용자 인터페이스 이벤트 처리
+ * - 다양한 뷰(일정관리, 세션관리, 자동배치, 캘린더) 간 전환 관리
+ * - 모달 다이얼로그 관리 (일정/세션 추가/편집)
+ * - 데이터 가져오기/내보내기 기능
+ * - FullCalendar 통합 및 캘린더 뷰 관리
+ * - 자동 배치 알고리즘과의 연동
+ * - 알림 및 사용자 피드백 관리
+ * 
+ * 아키텍처:
+ * - MVC 패턴의 Controller 역할
+ * - DataStore를 통한 데이터 관리
+ * - Scheduler를 통한 자동 배치 로직
+ * - FullCalendar 라이브러리 활용
+ * 
+ * 상태 관리:
+ * - currentView: 현재 활성 뷰
+ * - editingScheduleId/editingSessionId: 편집 중인 항목 추적
+ * - calendar: FullCalendar 인스턴스
+ * - scheduler: 자동 배치 알고리즘 인스턴스
+ */
 class TimeTetrisApp {
+    /**
+     * TimeTetrisApp 생성자
+     * 애플리케이션의 핵심 컴포넌트들을 초기화하고 앱을 시작합니다.
+     */
     constructor() {
+        /** @type {DataStore} 모든 데이터를 관리하는 중앙 저장소 */
         this.dataStore = new DataStore();
-        this.calendar = null;
-        this.currentView = 'schedules';
-        this.editingScheduleId = null;
-        this.editingSessionId = null;
-        this.scheduler = null; // scheduler.js에서 초기화
         
+        /** @type {FullCalendar.Calendar|null} FullCalendar 인스턴스 */
+        this.calendar = null;
+        
+        /** @type {string} 현재 활성화된 뷰 ('schedules'|'sessions'|'assignment'|'calendar') */
+        this.currentView = 'schedules';
+        
+        /** @type {string|null} 현재 편집 중인 일정의 ID */
+        this.editingScheduleId = null;
+        
+        /** @type {string|null} 현재 편집 중인 세션의 ID */
+        this.editingSessionId = null;
+        
+        /** @type {Scheduler|null} 자동 배치 알고리즘 인스턴스 */
+        this.scheduler = null;
+        
+        // 애플리케이션 초기화
         this.init();
     }
 
