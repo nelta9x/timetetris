@@ -3,161 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TimeTetris - 세션 스케줄러</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>TimeTetris - 스마트 스케줄 매니저</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css' rel='stylesheet' />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>TimeTetris</h1>
-            <div class="header-buttons">
-                <button id="save-btn" class="btn btn-secondary">저장</button>
-                <button id="load-btn" class="btn btn-secondary">불러오기</button>
-                <input type="file" id="file-input" accept=".json" style="display: none;">
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo">
+                <i class="fas fa-puzzle-piece"></i>
+                <span>TimeTetris</span>
             </div>
-        </header>
-
-        <div class="main-content">
-            <div class="sidebar">
-                <nav class="nav-menu">
-                    <button class="nav-item active" data-tab="users">사용자</button>
-                    <button class="nav-item" data-tab="sessions">세션</button>
-                    <button class="nav-item" data-tab="scheduler">배치</button>
-                    <button class="nav-item" data-tab="results">결과</button>
-                </nav>
+        </div>
+        <div class="header-center">
+            <div class="status-bar">
+                <span id="scheduleCount">일정: 0개</span>
+                <span class="separator">|</span>
+                <span id="sessionCount">세션: 0개</span>
+                <span class="separator">|</span>
+                <span id="assignedCount">배치완료: 0개</span>
             </div>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-icon" onclick="app.exportData()" title="내보내기">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="btn btn-icon" onclick="app.importData()" title="불러오기">
+                <i class="fas fa-upload"></i>
+            </button>
+            <button class="btn btn-icon" onclick="app.clearAll()" title="모두 지우기">
+                <i class="fas fa-trash"></i>
+            </button>
+            <button class="btn btn-icon" onclick="app.showHelp()" title="도움말">
+                <i class="fas fa-question-circle"></i>
+            </button>
+        </div>
+    </header>
 
-            <div class="content-area">
-                <!-- 사용자 관리 탭 -->
-                <div class="tab-content" id="users-tab">
-                    <div class="tab-header">
-                        <h2>사용자 관리</h2>
-                        <button id="add-user-btn" class="btn btn-primary">사용자 추가</button>
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="schedules">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>일정 관리</span>
+                </button>
+                <button class="nav-item" data-view="sessions">
+                    <i class="fas fa-clock"></i>
+                    <span>세션 관리</span>
+                </button>
+                <button class="nav-item" data-view="assignment">
+                    <i class="fas fa-puzzle-piece"></i>
+                    <span>자동 배치</span>
+                </button>
+                <button class="nav-item" data-view="calendar">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>캘린더 뷰</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Schedules View -->
+            <div id="schedulesView" class="view-panel active">
+                <div class="panel-header">
+                    <h2>일정 관리</h2>
+                    <button class="btn btn-primary" onclick="app.showScheduleModal()">
+                        <i class="fas fa-plus"></i> 새 일정 추가
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <div class="search-bar">
+                        <input type="text" id="scheduleSearch" placeholder="일정 검색..." class="search-input">
                     </div>
-                    
-                    <div class="user-form" id="user-form">
-                        <div class="form-row">
-                            <input type="text" id="user-name" placeholder="이름" required>
-                            <input type="email" id="user-email" placeholder="이메일 (선택사항)">
+                    <div id="schedulesList" class="items-list">
+                        <!-- 일정 목록이 여기 표시됩니다 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sessions View -->
+            <div id="sessionsView" class="view-panel">
+                <div class="panel-header">
+                    <h2>세션 관리</h2>
+                    <button class="btn btn-primary" onclick="app.showSessionModal()">
+                        <i class="fas fa-plus"></i> 새 세션 추가
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <div id="sessionsList" class="items-list">
+                        <!-- 세션 목록이 여기 표시됩니다 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assignment View -->
+            <div id="assignmentView" class="view-panel">
+                <div class="panel-header">
+                    <h2>자동 배치</h2>
+                    <button class="btn btn-success" onclick="app.runAutoAssignment()">
+                        <i class="fas fa-play"></i> 배치 실행
+                    </button>
+                    <button class="btn btn-warning" onclick="app.clearAssignments()">
+                        <i class="fas fa-undo"></i> 배치 초기화
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <div class="assignment-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalSchedules">0</div>
+                            <div class="stat-label">전체 일정</div>
                         </div>
-                        <div class="form-row">
-                            <input type="tel" id="user-mobile" placeholder="전화번호 (선택사항)">
-                            <input type="number" id="user-max-sessions" placeholder="최대 세션 수" value="1" min="1">
+                        <div class="stat-card success">
+                            <div class="stat-value" id="assignedSchedules">0</div>
+                            <div class="stat-label">배치 완료</div>
                         </div>
-                        <div class="form-row">
-                            <label>가능한 시간대:</label>
-                            <div class="time-slots" id="user-time-slots">
-                                <!-- 시간 슬롯이 동적으로 생성됨 -->
+                        <div class="stat-card warning">
+                            <div class="stat-value" id="unassignedSchedules">0</div>
+                            <div class="stat-label">미배치</div>
+                        </div>
+                        <div class="stat-card info">
+                            <div class="stat-value" id="utilizationRate">0%</div>
+                            <div class="stat-label">배치율</div>
+                        </div>
+                    </div>
+                    <div class="assignment-results">
+                        <h3>배치 결과</h3>
+                        <div id="assignmentResults">
+                            <!-- 배치 결과가 여기 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div id="calendarView" class="view-panel">
+                <div class="panel-header">
+                    <h2>캘린더 뷰</h2>
+                    <div class="calendar-controls">
+                        <button class="btn btn-sm" onclick="app.changeCalendarView('dayGridMonth')">월</button>
+                        <button class="btn btn-sm" onclick="app.changeCalendarView('timeGridWeek')">주</button>
+                        <button class="btn btn-sm" onclick="app.changeCalendarView('timeGridDay')">일</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="scheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>일정 추가/편집</h3>
+                <button class="modal-close" onclick="app.closeScheduleModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="form-group">
+                        <label for="scheduleName">일정 이름 *</label>
+                        <input type="text" id="scheduleName" required placeholder="예: 김철수 학생">
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleNote">메모</label>
+                        <textarea id="scheduleNote" rows="3" placeholder="추가 정보를 입력하세요"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedulePriority">우선순위</label>
+                        <input type="number" id="schedulePriority" min="1" max="10" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>가능한 시간대</label>
+                        <div id="availableSlots" class="time-slots">
+                            <div class="time-slot">
+                                <input type="datetime-local" class="slot-datetime">
+                                <input type="number" class="slot-duration" placeholder="분" min="10" max="480" value="60">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="app.removeTimeSlot(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </div>
-                        <div class="form-actions">
-                            <button id="save-user-btn" class="btn btn-primary">저장</button>
-                            <button id="cancel-user-btn" class="btn btn-secondary">취소</button>
-                        </div>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="app.addTimeSlot()">
+                            <i class="fas fa-plus"></i> 시간대 추가
+                        </button>
                     </div>
-
-                    <div class="users-list" id="users-list">
-                        <!-- 사용자 목록이 동적으로 생성됨 -->
-                    </div>
-                </div>
-
-                <!-- 세션 관리 탭 -->
-                <div class="tab-content" id="sessions-tab" style="display: none;">
-                    <div class="tab-header">
-                        <h2>세션 관리</h2>
-                        <button id="add-session-btn" class="btn btn-primary">세션 추가</button>
-                    </div>
-
-                    <div class="session-form" id="session-form">
-                        <div class="form-row">
-                            <input type="text" id="session-name" placeholder="세션명" required>
-                            <select id="session-type">
-                                <option value="individual">개인 세션</option>
-                                <option value="group">그룹 세션</option>
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <input type="number" id="session-max-participants" placeholder="최대 참가자 수" value="1" min="1">
-                            <input type="number" id="session-duration" placeholder="시간(분)" value="60" min="15">
-                        </div>
-                        <div class="form-row">
-                            <label>세션 시간:</label>
-                            <select id="session-time-slot">
-                                <!-- 시간 슬롯 옵션이 동적으로 생성됨 -->
-                            </select>
-                        </div>
-                        <div class="form-actions">
-                            <button id="save-session-btn" class="btn btn-primary">저장</button>
-                            <button id="cancel-session-btn" class="btn btn-secondary">취소</button>
-                        </div>
-                    </div>
-
-                    <div class="sessions-list" id="sessions-list">
-                        <!-- 세션 목록이 동적으로 생성됨 -->
-                    </div>
-                </div>
-
-                <!-- 자동 배치 탭 -->
-                <div class="tab-content" id="scheduler-tab" style="display: none;">
-                    <div class="tab-header">
-                        <h2>자동 배치</h2>
-                    </div>
-
-                    <div class="scheduler-options">
-                        <div class="form-row">
-                            <label>시드값 (재현 가능한 결과):</label>
-                            <input type="number" id="random-seed" placeholder="선택사항">
-                        </div>
-                        <div class="form-row">
-                            <label>
-                                <input type="checkbox" id="allow-multiple-sessions">
-                                한 사용자가 여러 세션 참여 허용
-                            </label>
-                        </div>
-                        <div class="form-row">
-                            <label>
-                                <input type="checkbox" id="prioritize-full-sessions" checked>
-                                완전한 세션 우선
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="scheduler-actions">
-                        <button id="auto-assign-btn" class="btn btn-primary btn-large">자동 배치 실행</button>
-                        <button id="clear-assignments-btn" class="btn btn-secondary">배치 초기화</button>
-                    </div>
-
-                    <div class="scheduler-status" id="scheduler-status">
-                        <!-- 배치 상태가 표시됨 -->
-                    </div>
-                </div>
-
-                <!-- 결과 확인 탭 -->
-                <div class="tab-content" id="results-tab" style="display: none;">
-                    <div class="tab-header">
-                        <h2>배치 결과</h2>
-                        <div class="result-actions">
-                            <button id="export-csv-btn" class="btn btn-secondary">CSV 내보내기</button>
-                            <button id="export-json-btn" class="btn btn-secondary">JSON 내보내기</button>
-                        </div>
-                    </div>
-
-                    <div class="results-summary" id="results-summary">
-                        <!-- 배치 요약 정보 -->
-                    </div>
-
-                    <div class="results-table" id="results-table">
-                        <!-- 배치 결과 테이블 -->
-                    </div>
-
-                    <div class="unassigned-users" id="unassigned-users">
-                        <!-- 미배치 사용자 목록 -->
-                    </div>
-                </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeScheduleModal()">취소</button>
+                <button class="btn btn-primary" onclick="app.saveSchedule()">저장</button>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Session Modal -->
+    <div id="sessionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>세션 추가/편집</h3>
+                <button class="modal-close" onclick="app.closeSessionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="sessionForm">
+                    <div class="form-group">
+                        <label for="sessionName">세션 이름</label>
+                        <input type="text" id="sessionName" placeholder="자동 생성됨">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="sessionEnabled" checked>
+                            활성화
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="sessionDateTime">시작 시간 *</label>
+                        <input type="datetime-local" id="sessionDateTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sessionDuration">지속 시간 (분) *</label>
+                        <input type="number" id="sessionDuration" min="10" max="480" value="60" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeSessionModal()">취소</button>
+                <button class="btn btn-primary" onclick="app.saveSession()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import File Input (hidden) -->
+    <input type="file" id="importFile" accept=".json" style="display: none">
+
+    <!-- Scripts -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js'></script>
+    <script src="js/models.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/scheduler.js"></script>
+    <script src="js/sample-data.js"></script>
 </body>
 </html>
