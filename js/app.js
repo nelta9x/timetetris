@@ -76,7 +76,16 @@ class TimeTetrisApp {
 
         // 뷰별 업데이트
         if (view === 'calendar') {
-            setTimeout(() => this.calendar?.render(), 100);
+            console.log('🔄 캘린더 뷰로 전환 중...');
+            setTimeout(() => {
+                if (this.calendar) {
+                    console.log('📅 캘린더 렌더링 및 이벤트 새로고침');
+                    this.calendar.render();
+                    this.calendar.refetchEvents();
+                } else {
+                    console.warn('⚠️ 캘린더가 초기화되지 않았습니다');
+                }
+            }, 100);
         }
     }
 
@@ -114,6 +123,17 @@ class TimeTetrisApp {
             const isAssigned = !!schedule.assignedSession;
             const session = isAssigned ? this.dataStore.getSession(schedule.assignedSession) : null;
             
+            // 가능 시간 목록 생성 (최대 5개까지만 표시)
+            const availableSlotLabels = schedule.availableSlots.map(slot => {
+                const start = new Date(slot.datetime);
+                const end = new Date(start.getTime() + slot.duration * 60000);
+                return `${this.formatDate(start)} ${this.formatTime(start)}-${this.formatTime(end)}`;
+            });
+            
+            const maxDisplaySlots = 5;
+            const displaySlots = availableSlotLabels.slice(0, maxDisplaySlots);
+            const hasMoreSlots = availableSlotLabels.length > maxDisplaySlots;
+            
             return `
                 <div class="item-card ${isAssigned ? 'assigned' : ''}" data-id="${schedule.id}">
                     <div class="item-header">
@@ -128,6 +148,14 @@ class TimeTetrisApp {
                         <span><i class="fas fa-clock"></i> 가능 시간: ${schedule.availableSlots.length}개</span>
                         ${session ? `<span><i class="fas fa-link"></i> ${this.escapeHtml(session.name)}</span>` : ''}
                     </div>
+                    ${schedule.availableSlots.length > 0 ? `
+                        <div class="available-slots">
+                            <div class="slot-list">
+                                ${displaySlots.map(slot => `<span class="slot-tag">${slot}</span>`).join('')}
+                                ${hasMoreSlots ? '<span class="slot-more">...</span>' : ''}
+                            </div>
+                        </div>
+                    ` : ''}
                     <div class="item-actions">
                         <button class="btn btn-sm btn-secondary" onclick="app.editSchedule('${schedule.id}')">
                             <i class="fas fa-edit"></i> 편집
@@ -468,18 +496,33 @@ class TimeTetrisApp {
 
     // 배치 관리 메서드
     runAutoAssignment() {
+        console.log('🎯 자동 배치 시작');
+        
         if (!this.scheduler) {
             this.scheduler = new Scheduler(this.dataStore);
         }
         
         const result = this.scheduler.autoAssign();
         
+        console.log(`📊 배치 결과: 성공 ${result.assigned}개, 실패 ${result.failed}개`);
+        
         this.showNotification(
             `배치 완료: ${result.assigned}개 성공, ${result.failed}개 실패`, 
             result.failed > 0 ? 'warning' : 'success'
         );
         
+        // 모든 뷰 업데이트 (캘린더 포함)
         this.updateAllViews();
+        
+        // 캘린더가 현재 활성 뷰인 경우 강제로 새로고침
+        if (this.currentView === 'calendar') {
+            console.log('🔄 현재 캘린더 뷰가 활성화되어 있어 강제 새로고침');
+            setTimeout(() => {
+                if (this.calendar) {
+                    this.calendar.refetchEvents();
+                }
+            }, 200);
+        }
     }
 
     clearAssignments() {
@@ -506,35 +549,64 @@ class TimeTetrisApp {
 
     // 캘린더 관련 메서드
     initCalendar() {
+        console.log('🚀 FullCalendar 초기화 시작');
         const calendarEl = document.getElementById('calendar');
-        this.calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'timeGridWeek',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
-            },
-            locale: 'ko',
-            height: 'auto',
-            events: this.getCalendarEvents.bind(this),
-            eventClick: this.handleCalendarEventClick.bind(this),
-            slotMinTime: '06:00:00',
-            slotMaxTime: '23:00:00',
-            slotDuration: '00:30:00',
-            allDaySlot: false,
-            weekNumbers: false,
-            nowIndicator: true
-        });
+        
+        if (!calendarEl) {
+            console.error('❌ calendar 엘리먼트를 찾을 수 없습니다');
+            return;
+        }
+        
+        try {
+            this.calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                locale: 'ko',
+                height: 'auto',
+                events: this.getCalendarEvents.bind(this),
+                eventClick: this.handleCalendarEventClick.bind(this),
+                slotMinTime: '06:00:00',
+                slotMaxTime: '23:00:00',
+                slotDuration: '00:30:00',
+                allDaySlot: false,
+                weekNumbers: false,
+                nowIndicator: true,
+                eventDidMount: function(info) {
+                    console.log('📌 이벤트 마운트됨:', info.event.title);
+                },
+                loading: function(isLoading) {
+                    console.log(isLoading ? '⏳ 캘린더 로딩 중...' : '✅ 캘린더 로딩 완료');
+                }
+            });
+            console.log('✅ FullCalendar 초기화 완료');
+        } catch (error) {
+            console.error('❌ FullCalendar 초기화 실패:', error);
+        }
     }
 
     getCalendarEvents() {
         const events = [];
         
+        // 디버깅: 데이터 상태 확인
+        const allSessions = this.dataStore.getAllSessions();
+        const allSchedules = this.dataStore.getAllSchedules();
+        console.log('🔍 캘린더 이벤트 생성 중...');
+        console.log(`📅 전체 세션 수: ${allSessions.length}`);
+        console.log(`📝 전체 일정 수: ${allSchedules.length}`);
+        
         // 세션 표시
-        this.dataStore.getAllSessions().forEach(session => {
+        allSessions.forEach(session => {
+            console.log(`🔧 세션 처리 중: ${session.name}, 활성화: ${session.enabled}, 시간슬롯: ${!!session.timeSlot}`);
+            
             if (session.enabled && session.timeSlot) {
                 const start = new Date(session.timeSlot.datetime);
                 const end = new Date(start.getTime() + session.timeSlot.duration * 60000);
+                
+                console.log(`✅ 세션 이벤트 추가: ${session.name}, 시작: ${start}, 종료: ${end}`);
                 
                 events.push({
                     id: session.id,
@@ -552,10 +624,14 @@ class TimeTetrisApp {
         });
         
         // 일정의 가능한 시간대 표시 (옅은 색으로)
-        this.dataStore.getAllSchedules().forEach(schedule => {
+        allSchedules.forEach(schedule => {
+            console.log(`📋 일정 처리 중: ${schedule.name}, 슬롯 수: ${schedule.availableSlots.length}`);
+            
             schedule.availableSlots.forEach((slot, index) => {
                 const start = new Date(slot.datetime);
                 const end = new Date(start.getTime() + slot.duration * 60000);
+                
+                console.log(`✅ 일정 슬롯 이벤트 추가: ${schedule.name} (가능), 시작: ${start}, 종료: ${end}`);
                 
                 events.push({
                     id: `${schedule.id}-slot-${index}`,
@@ -573,6 +649,7 @@ class TimeTetrisApp {
             });
         });
         
+        console.log(`🎯 총 ${events.length}개의 캘린더 이벤트 생성됨`);
         return events;
     }
 
@@ -587,8 +664,12 @@ class TimeTetrisApp {
     }
 
     updateCalendar() {
+        console.log('🔄 캘린더 업데이트 중...');
         if (this.calendar) {
+            console.log('📅 캘린더 이벤트 새로고침 실행');
             this.calendar.refetchEvents();
+        } else {
+            console.warn('⚠️ 캘린더가 초기화되지 않아서 업데이트할 수 없습니다');
         }
     }
 
