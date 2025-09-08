@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeTetris - 세션 스케줄러</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>TimeTetris</h1>
+            <div class="header-buttons">
+                <button id="save-btn" class="btn btn-secondary">저장</button>
+                <button id="load-btn" class="btn btn-secondary">불러오기</button>
+                <input type="file" id="file-input" accept=".json" style="display: none;">
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <nav class="nav-menu">
+                    <button class="nav-item active" data-tab="users">사용자</button>
+                    <button class="nav-item" data-tab="sessions">세션</button>
+                    <button class="nav-item" data-tab="scheduler">배치</button>
+                    <button class="nav-item" data-tab="results">결과</button>
+                </nav>
+            </div>
+
+            <div class="content-area">
+                <!-- 사용자 관리 탭 -->
+                <div class="tab-content" id="users-tab">
+                    <div class="tab-header">
+                        <h2>사용자 관리</h2>
+                        <button id="add-user-btn" class="btn btn-primary">사용자 추가</button>
+                    </div>
+                    
+                    <div class="user-form" id="user-form">
+                        <div class="form-row">
+                            <input type="text" id="user-name" placeholder="이름" required>
+                            <input type="email" id="user-email" placeholder="이메일 (선택사항)">
+                        </div>
+                        <div class="form-row">
+                            <input type="tel" id="user-mobile" placeholder="전화번호 (선택사항)">
+                            <input type="number" id="user-max-sessions" placeholder="최대 세션 수" value="1" min="1">
+                        </div>
+                        <div class="form-row">
+                            <label>가능한 시간대:</label>
+                            <div class="time-slots" id="user-time-slots">
+                                <!-- 시간 슬롯이 동적으로 생성됨 -->
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button id="save-user-btn" class="btn btn-primary">저장</button>
+                            <button id="cancel-user-btn" class="btn btn-secondary">취소</button>
+                        </div>
+                    </div>
+
+                    <div class="users-list" id="users-list">
+                        <!-- 사용자 목록이 동적으로 생성됨 -->
+                    </div>
+                </div>
+
+                <!-- 세션 관리 탭 -->
+                <div class="tab-content" id="sessions-tab" style="display: none;">
+                    <div class="tab-header">
+                        <h2>세션 관리</h2>
+                        <button id="add-session-btn" class="btn btn-primary">세션 추가</button>
+                    </div>
+
+                    <div class="session-form" id="session-form">
+                        <div class="form-row">
+                            <input type="text" id="session-name" placeholder="세션명" required>
+                            <select id="session-type">
+                                <option value="individual">개인 세션</option>
+                                <option value="group">그룹 세션</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <input type="number" id="session-max-participants" placeholder="최대 참가자 수" value="1" min="1">
+                            <input type="number" id="session-duration" placeholder="시간(분)" value="60" min="15">
+                        </div>
+                        <div class="form-row">
+                            <label>세션 시간:</label>
+                            <select id="session-time-slot">
+                                <!-- 시간 슬롯 옵션이 동적으로 생성됨 -->
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button id="save-session-btn" class="btn btn-primary">저장</button>
+                            <button id="cancel-session-btn" class="btn btn-secondary">취소</button>
+                        </div>
+                    </div>
+
+                    <div class="sessions-list" id="sessions-list">
+                        <!-- 세션 목록이 동적으로 생성됨 -->
+                    </div>
+                </div>
+
+                <!-- 자동 배치 탭 -->
+                <div class="tab-content" id="scheduler-tab" style="display: none;">
+                    <div class="tab-header">
+                        <h2>자동 배치</h2>
+                    </div>
+
+                    <div class="scheduler-options">
+                        <div class="form-row">
+                            <label>시드값 (재현 가능한 결과):</label>
+                            <input type="number" id="random-seed" placeholder="선택사항">
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                <input type="checkbox" id="allow-multiple-sessions">
+                                한 사용자가 여러 세션 참여 허용
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                <input type="checkbox" id="prioritize-full-sessions" checked>
+                                완전한 세션 우선
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="scheduler-actions">
+                        <button id="auto-assign-btn" class="btn btn-primary btn-large">자동 배치 실행</button>
+                        <button id="clear-assignments-btn" class="btn btn-secondary">배치 초기화</button>
+                    </div>
+
+                    <div class="scheduler-status" id="scheduler-status">
+                        <!-- 배치 상태가 표시됨 -->
+                    </div>
+                </div>
+
+                <!-- 결과 확인 탭 -->
+                <div class="tab-content" id="results-tab" style="display: none;">
+                    <div class="tab-header">
+                        <h2>배치 결과</h2>
+                        <div class="result-actions">
+                            <button id="export-csv-btn" class="btn btn-secondary">CSV 내보내기</button>
+                            <button id="export-json-btn" class="btn btn-secondary">JSON 내보내기</button>
+                        </div>
+                    </div>
+
+                    <div class="results-summary" id="results-summary">
+                        <!-- 배치 요약 정보 -->
+                    </div>
+
+                    <div class="results-table" id="results-table">
+                        <!-- 배치 결과 테이블 -->
+                    </div>
+
+                    <div class="unassigned-users" id="unassigned-users">
+                        <!-- 미배치 사용자 목록 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
