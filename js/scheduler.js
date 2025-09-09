@@ -260,7 +260,7 @@ class Scheduler {
 
         bestAssignment.best.forEach((sessionId, scheduleId) => {
             if (sessionId) {
-                const schedule = this.dataStore.getSchedule(scheduleId);
+                const schedule = this.dataStore.getParticipant(scheduleId);
                 const session = this.dataStore.getSession(sessionId);
                 
                 if (schedule && session && session.addSchedule(scheduleId)) {

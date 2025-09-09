@@ -739,7 +739,7 @@ class TimeTetrisApp {
     }
 
     unassignSchedule(scheduleId) {
-        const schedule = this.dataStore.getSchedule(scheduleId);
+        const schedule = this.dataStore.getParticipant(scheduleId);
         if (schedule && schedule.assignedSession) {
             const session = this.dataStore.getSession(schedule.assignedSession);
             if (session) {
@@ -804,7 +804,7 @@ class TimeTetrisApp {
 
         const events = [];
         const sessions = this.dataStore.getAllSessions();
-        const schedules = this.dataStore.getAllSchedules();
+        const participants = this.dataStore.getAllParticipants();
 
         // 세션 이벤트 생성
         sessions.forEach(session => {
@@ -869,7 +869,7 @@ class TimeTetrisApp {
             newSession.addSchedule(schedule.id);
             
             // 일정 업데이트
-            const scheduleObj = this.dataStore.getSchedule(schedule.id);
+            const scheduleObj = this.dataStore.getParticipant(schedule.id);
             if (scheduleObj) {
                 scheduleObj.assignedSession = toSession.id;
             }
