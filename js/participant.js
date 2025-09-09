@@ -20,7 +20,6 @@ class Participant {
      * @param {string} data.name - 참가자 이름
      * @param {string} data.note - 메모 (선택사항)
      * @param {Array} data.availableSlots - 가능한 시간대 배열
-     * @param {string} data.assignedSession - 배치된 세션 ID (선택사항)
      * @param {number} data.priority - 우선순위 (1-10, 기본값: 1)
      */
     constructor(data = {}) {
@@ -28,8 +27,8 @@ class Participant {
         this.name = data.name || '';
         this.note = data.note || '';
         this.availableSlots = data.hasOwnProperty('availableSlots') ? data.availableSlots : this.createDefaultTimeSlot();
-        this.assignedSession = data.assignedSession || null;
         this.priority = data.priority || 1;
+        // assignedSession 제거 - Session.assignedParticipants에서 관리
     }
 
     /**
@@ -114,17 +113,19 @@ class Participant {
             name: this.name,
             note: this.note,
             availableSlots: this.availableSlots,
-            assignedSession: this.assignedSession,
             priority: this.priority
+            // assignedSession 제거 - Session.assignedParticipants에서 관리
         };
     }
 
     /**
      * 참가자가 현재 배치되어 있는지 확인
-     * @returns {boolean} 배치되어 있으면 true
+     * @deprecated DataStore.isParticipantAssigned(participantId)를 사용하세요
+     * @returns {boolean} 배치되어 있으면 false (항상 false 반환)
      */
     isAssigned() {
-        return this.assignedSession !== null;
+        // assignedSession 제거됨 - DataStore에서 확인해야 함
+        return false;
     }
 
     /**

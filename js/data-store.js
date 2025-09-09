@@ -199,6 +199,29 @@ class DataStore {
     // ========================
     // 배치 관리 메서드들
     // ========================
+    
+    /**
+     * 참가자가 배치된 세션 찾기
+     * @param {string} participantId - 참가자 ID
+     * @returns {Session|null} 배치된 세션 또는 null
+     */
+    getParticipantSession(participantId) {
+        for (const session of this.sessions.values()) {
+            if (session.assignedParticipants && session.assignedParticipants.includes(participantId)) {
+                return session;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * 참가자가 배치되었는지 확인
+     * @param {string} participantId - 참가자 ID
+     * @returns {boolean} 배치 여부
+     */
+    isParticipantAssigned(participantId) {
+        return this.getParticipantSession(participantId) !== null;
+    }
 
 
     // ========================
@@ -330,7 +353,19 @@ class DataStore {
     getStatistics() {
         const totalParticipants = this.participants.size;
         const totalSessions = this.sessions.size;
-        const assignedParticipants = Array.from(this.participants.values()).filter(p => p.assignedSession).length;
+        
+        // 배치된 참가자 수 계산 - Session의 assignedParticipants에서 확인
+        let assignedParticipants = 0;
+        const assignedIds = new Set();
+        for (const session of this.sessions.values()) {
+            if (session.assignedParticipants) {
+                for (const participantId of session.assignedParticipants) {
+                    assignedIds.add(participantId);
+                }
+            }
+        }
+        assignedParticipants = assignedIds.size;
+        
         const unassignedParticipants = totalParticipants - assignedParticipants;
         const utilizationRate = totalParticipants > 0 ? Math.round((assignedParticipants / totalParticipants) * 100) : 0;
 
@@ -348,7 +383,7 @@ class DataStore {
      * @returns {Participant[]} 배치되지 않은 참가자 배열
      */
     getUnassignedParticipants() {
-        return Array.from(this.participants.values()).filter(participant => !participant.isAssigned());
+        return Array.from(this.participants.values()).filter(participant => !this.isParticipantAssigned(participant.id));
     }
 
     /**

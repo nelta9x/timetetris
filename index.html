@@ -93,12 +93,17 @@
 
             <!-- Sessions View -->
             <div id="sessionsView" class="view-panel">
-                <div class="panel-header">
-                    <h2>세션 관리</h2>
+            <div class="panel-header">
+                <h2>세션 관리</h2>
+                <div class="header-actions">
                     <button class="btn btn-primary" onclick="app.showSessionModal()">
                         <i class="fas fa-plus"></i> 새 세션 추가
                     </button>
+                    <button class="btn btn-success" onclick="app.autoAssignAll()">
+                        <i class="fas fa-magic"></i> 전체 자동 배치
+                    </button>
                 </div>
+            </div>
                 <div class="panel-body">
                     <div id="sessionsList" class="items-list">
                         <!-- 세션 목록이 여기 표시됩니다 -->
@@ -222,11 +227,17 @@
                         <label for="sessionName">세션 이름</label>
                         <input type="text" id="sessionName" placeholder="자동 생성됨">
                     </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="sessionEnabled" checked>
-                            활성화
-                        </label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="sessionEnabled" checked>
+                                활성화
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="sessionCapacity">세션 용량 (명)</label>
+                            <input type="number" id="sessionCapacity" min="1" max="20" value="1" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="sessionDateTime">시작 시간 *</label>

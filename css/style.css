@@ -446,6 +446,150 @@ body {
     align-items: center;
 }
 
+/* 참가자 배치 관련 스타일 */
+.assigned-participants-area {
+    margin: 16px 0;
+    padding: 16px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.assigned-participants-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.participant-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.participant-chip:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.participant-chip i {
+    font-size: 12px;
+}
+
+.chip-remove {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 4px;
+    display: flex;
+    align-items: center;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.chip-remove:hover {
+    opacity: 1;
+}
+
+.empty-participants {
+    padding: 12px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* 참가자 선택 모달 스타일 */
+.participant-selection-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+}
+
+.participant-selection-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+}
+
+.participant-selection-item:hover {
+    background: var(--bg-hover);
+}
+
+.participant-selection-item:last-child {
+    margin-bottom: 0;
+}
+
+.participant-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.participant-info i {
+    color: var(--primary-color);
+}
+
+.participant-info small {
+    color: var(--text-secondary);
+    margin-left: 8px;
+}
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* 드래그&드롭 스타일 */
+.item-card.dragging {
+    opacity: 0.5;
+    cursor: move;
+}
+
+.item-card.drag-over {
+    background: var(--bg-hover);
+    border: 2px dashed var(--primary-color);
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+}
+
+.drag-handle {
+    cursor: grab;
+    color: var(--text-secondary);
+    padding-right: 8px;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.item-card[draggable="true"] {
+    cursor: move;
+}
+
+.item-card[draggable="false"] {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 .assigned-schedule-name {
     font-weight: 500;
 }

@@ -133,7 +133,7 @@ class TimeTetrisApp {
         const stats = this.dataStore.getStatistics();
         document.getElementById('participantCount').textContent = `참가자 수: ${stats.totalParticipants}`;
         document.getElementById('sessionCount').textContent = `세션 수: ${stats.totalSessions}`;
-        document.getElementById('assignedCount').textContent = `배치완료: ${stats.assignedParticipants}개`;
+        document.getElementById('assignedCount').textContent = `배치완료: ${stats.assignedParticipants}`;
     }
 
     updateParticipantsList() {
@@ -152,8 +152,8 @@ class TimeTetrisApp {
         }
 
         container.innerHTML = participants.map(participant => {
-            const isAssigned = !!participant.assignedSession;
-            const session = isAssigned ? this.dataStore.getSession(participant.assignedSession) : null;
+            const session = this.dataStore.getParticipantSession(participant.id);
+            const isAssigned = !!session;
             
             // 가능 시간 목록 생성 (최대 5개까지만 표시)
             const availableSlots = participant.availableSlots || [];
@@ -179,7 +179,11 @@ class TimeTetrisApp {
             const hasMoreSlots = availableSlotLabels.length > maxDisplaySlots;
             
             return `
-                <div class="item-card ${isAssigned ? 'assigned' : ''}" data-id="${participant.id}" draggable="true">
+                <div class="item-card ${isAssigned ? 'assigned' : ''}" 
+                     data-id="${participant.id}" 
+                     draggable="${!isAssigned}"
+                     ondragstart="app.handleDragStart(event, '${participant.id}')"
+                     ondragend="app.handleDragEnd(event)">
                     <div class="item-header">
                         <div class="drag-handle">
                             <i class="fas fa-grip-vertical"></i>
@@ -237,9 +241,14 @@ class TimeTetrisApp {
         container.innerHTML = sessions.map(session => {
             const datetime = new Date(session.timeSlot.datetime);
             const endTime = new Date(datetime.getTime() + session.timeSlot.duration * 60000);
+            const assignedIds = session.assignedParticipants || session.assignedSchedules || [];
             
             return `
-                <div class="item-card ${!session.enabled ? 'disabled' : ''}" data-id="${session.id}">
+                <div class="item-card ${!session.enabled ? 'disabled' : ''}" 
+                     data-id="${session.id}"
+                     ondrop="app.handleDropOnSession(event, '${session.id}')"
+                     ondragover="app.handleDragOver(event)"
+                     ondragleave="app.handleDragLeave(event)">
                     <div class="item-header">
                         <div class="item-title">${this.escapeHtml(session.name)}</div>
                         <div class="item-badge ${session.enabled ? 'success' : 'danger'}">
@@ -252,9 +261,35 @@ class TimeTetrisApp {
                         <span><i class="fas fa-hourglass"></i> ${session.timeSlot.duration}분</span>
                     </div>
                     <div class="item-meta">
-                        <span><i class="fas fa-users"></i> 배치된 참가자: ${(session.assignedParticipants || []).length}개</span>
+                        <span><i class="fas fa-users"></i> 배치 현황: ${assignedIds.length}/${session.capacity || 1}명</span>
+                        ${assignedIds.length >= (session.capacity || 1) ? '<span class="item-badge warning">정원 초과</span>' : ''}
                     </div>
-                    ${(session.assignedParticipants || session.assignedSchedules || []).length > 0 ? this.renderAssignedSchedulesInSession(session) : ''}
+                    
+                    <!-- 배치된 참가자 카드 영역 -->
+                    <div class="assigned-participants-area">
+                        ${assignedIds.length > 0 ? `
+                            <div class="assigned-participants-list">
+                                ${assignedIds.map(id => {
+                                    const participant = this.dataStore.getParticipant(id);
+                                    if (!participant) return '';
+                                    return `
+                                        <div class="participant-chip" onclick="app.showParticipantModal('${participant.id}')">
+                                            <i class="fas fa-user"></i>
+                                            <span>${this.escapeHtml(participant.name)}</span>
+                                            <button class="chip-remove" onclick="event.stopPropagation(); app.removeParticipantFromSession('${session.id}', '${participant.id}')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : `
+                            <div class="empty-participants">
+                                <small>배치된 참가자가 없습니다</small>
+                            </div>
+                        `}
+                    </div>
+                    
                     <div class="item-actions">
                         <button class="btn btn-sm btn-secondary" onclick="app.editSession('${session.id}')">
                             <i class="fas fa-edit"></i> 편집
@@ -267,24 +302,348 @@ class TimeTetrisApp {
                             <i class="fas fa-${session.enabled ? 'pause' : 'play'}"></i> 
                             ${session.enabled ? '비활성화' : '활성화'}
                         </button>
+                        <button class="btn btn-sm btn-primary" onclick="app.showAssignParticipantModal('${session.id}')">
+                            <i class="fas fa-user-plus"></i> 참가자 배치
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="app.autoAssignToSession('${session.id}')">
+                            <i class="fas fa-magic"></i> 자동 배치
+                        </button>
                     </div>
                 </div>
             `;
         }).join('');
     }
 
-    renderAssignedSchedulesInSession(session) {
-        const assignedIds = session.assignedParticipants || session.assignedSchedules || [];
-        const participantNames = assignedIds.map(id => {
-            const participant = this.dataStore.getParticipant(id);
-            return participant ? this.escapeHtml(participant.name) : 'Unknown';
-        }).join(', ');
-
-        return `
-            <div class="assigned-in-session">
-                <small><strong>배치된 참가자:</strong> ${participantNames}</small>
+    // 참가자 배치 관련 메서드
+    showAssignParticipantModal(sessionId) {
+        const session = this.dataStore.getSession(sessionId);
+        if (!session) return;
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'block';
+        
+        const allParticipants = this.dataStore.getAllParticipants();
+        const availableParticipants = allParticipants.filter(p => {
+            // 이미 배치된 참가자 제외
+            if (this.dataStore.isParticipantAssigned(p.id)) return false;
+            
+            // 세션 시간과 참가자 가능 시간이 겹치는지 확인
+            const sessionStart = new Date(session.timeSlot.datetime);
+            const sessionEnd = new Date(sessionStart.getTime() + session.timeSlot.duration * 60000);
+            
+            return p.availableSlots.some(slot => {
+                const slotStart = new Date(slot.datetime);
+                const slotEnd = new Date(slotStart.getTime() + slot.duration * 60000);
+                
+                return slotStart <= sessionStart && slotEnd >= sessionEnd;
+            });
+        });
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>참가자 배치 - ${this.escapeHtml(session.name)}</h3>
+                    <button class="close-btn" onclick="this.closest('.modal').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    ${availableParticipants.length > 0 ? `
+                        <p>배치 가능한 참가자 목록:</p>
+                        <div class="participant-selection-list">
+                            ${availableParticipants.map(p => `
+                                <div class="participant-selection-item">
+                                    <div class="participant-info">
+                                        <i class="fas fa-user"></i>
+                                        <span>${this.escapeHtml(p.name)}</span>
+                                        <small>(우선순위: ${p.priority})</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-primary" 
+                                            onclick="app.assignParticipantToSession('${sessionId}', '${p.id}')">
+                                        배치
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <p>배치 가능한 참가자가 없습니다.</p>
+                        <small>참가자의 가능 시간이 세션 시간과 겹치지 않거나, 모든 참가자가 이미 배치되었습니다.</small>
+                    `}
+                </div>
             </div>
         `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    assignParticipantToSession(sessionId, participantId) {
+        const session = this.dataStore.getSession(sessionId);
+        const participant = this.dataStore.getParticipant(participantId);
+        
+        if (!session || !participant) return;
+        
+        // Session 클래스의 메서드 사용
+        if (session.addParticipant) {
+            session.addParticipant(participantId);
+        } else {
+            // 하위 호환성을 위한 대체 로직
+            if (!session.assignedParticipants) {
+                session.assignedParticipants = [];
+            }
+            if (!session.assignedParticipants.includes(participantId)) {
+                session.assignedParticipants.push(participantId);
+            }
+        }
+        
+        // participant.assignedSession 제거 - Session이 이미 관리함
+        
+        this.dataStore.saveToLocalStorage();
+        this.showNotification(`${participant.name}님이 ${session.name}에 배치되었습니다`, 'success');
+        
+        // 모달 닫기
+        const modal = document.querySelector('.modal');
+        if (modal) modal.remove();
+        
+        // 뷰 업데이트
+        this.updateAllViews();
+    }
+    
+    removeParticipantFromSession(sessionId, participantId) {
+        const session = this.dataStore.getSession(sessionId);
+        const participant = this.dataStore.getParticipant(participantId);
+        
+        if (!session || !participant) return;
+        
+        // Session 클래스의 메서드 사용
+        if (session.removeParticipant) {
+            session.removeParticipant(participantId);
+        } else {
+            // 하위 호환성을 위한 대체 로직
+            if (session.assignedParticipants) {
+                const index = session.assignedParticipants.indexOf(participantId);
+                if (index > -1) {
+                    session.assignedParticipants.splice(index, 1);
+                }
+            }
+        }
+        
+        // participant.assignedSession 제거 - Session이 이미 관리함
+        
+        this.dataStore.saveToLocalStorage();
+        this.showNotification(`${participant.name}님이 배치 해제되었습니다`, 'info');
+        this.updateAllViews();
+    }
+    
+    // 드래그&드롭 이벤트 핸들러
+    handleDragStart(event, participantId) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('participantId', participantId);
+        event.target.classList.add('dragging');
+    }
+    
+    handleDragEnd(event) {
+        event.target.classList.remove('dragging');
+        // 모든 드롭 타겟의 하이라이트 제거
+        document.querySelectorAll('.drag-over').forEach(el => {
+            el.classList.remove('drag-over');
+        });
+    }
+    
+    handleDragOver(event) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        
+        // 세션 카드에 드래그 오버 효과 추가
+        const sessionCard = event.currentTarget;
+        if (!sessionCard.classList.contains('drag-over')) {
+            sessionCard.classList.add('drag-over');
+        }
+    }
+    
+    handleDragLeave(event) {
+        // 세션 카드에서 드래그 떠날 때 효과 제거
+        const sessionCard = event.currentTarget;
+        sessionCard.classList.remove('drag-over');
+    }
+    
+    handleDropOnSession(event, sessionId) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const participantId = event.dataTransfer.getData('participantId');
+        const sessionCard = event.currentTarget;
+        sessionCard.classList.remove('drag-over');
+        
+        if (!participantId) return;
+        
+        const participant = this.dataStore.getParticipant(participantId);
+        const session = this.dataStore.getSession(sessionId);
+        
+        if (!participant || !session) return;
+        
+        // 이미 배치된 참가자인지 확인
+        if (this.dataStore.isParticipantAssigned(participantId)) {
+            this.showNotification(`${participant.name}님은 이미 다른 세션에 배치되어 있습니다`, 'warning');
+            return;
+        }
+        
+        // 시간이 겹치는지 확인
+        const sessionStart = new Date(session.timeSlot.datetime);
+        const sessionEnd = new Date(sessionStart.getTime() + session.timeSlot.duration * 60000);
+        
+        const canFit = participant.availableSlots.some(slot => {
+            const slotStart = new Date(slot.datetime);
+            const slotEnd = new Date(slotStart.getTime() + slot.duration * 60000);
+            return slotStart <= sessionStart && slotEnd >= sessionEnd;
+        });
+        
+        if (!canFit) {
+            this.showNotification(`${participant.name}님의 가능 시간이 세션 시간과 맞지 않습니다`, 'error');
+            return;
+        }
+        
+        // 세션 용량 확인
+        if ((session.assignedParticipants || []).length >= (session.capacity || 1)) {
+            this.showNotification(`세션 정원이 초과되었습니다 (최대 ${session.capacity || 1}명)`, 'warning');
+            return;
+        }
+        
+        // 배치 실행
+        this.assignParticipantToSession(sessionId, participantId);
+    }
+    
+    // 자동 배치 기능
+    autoAssignToSession(sessionId) {
+        const session = this.dataStore.getSession(sessionId);
+        if (!session) return;
+        
+        const sessionStart = new Date(session.timeSlot.datetime);
+        const sessionEnd = new Date(sessionStart.getTime() + session.timeSlot.duration * 60000);
+        
+        // 현재 세션 용량 확인
+        const currentCount = (session.assignedParticipants || []).length;
+        const capacity = session.capacity || 1;
+        const availableSlots = capacity - currentCount;
+        
+        if (availableSlots <= 0) {
+            this.showNotification('세션이 이미 가득 찼습니다', 'warning');
+            return;
+        }
+        
+        // 배치 가능한 참가자 찾기
+        const allParticipants = this.dataStore.getAllParticipants();
+        const availableParticipants = allParticipants.filter(p => {
+            // 이미 배치된 참가자 제외
+            if (this.dataStore.isParticipantAssigned(p.id)) return false;
+            
+            // 시간이 맞는지 확인
+            return p.availableSlots.some(slot => {
+                const slotStart = new Date(slot.datetime);
+                const slotEnd = new Date(slotStart.getTime() + slot.duration * 60000);
+                return slotStart <= sessionStart && slotEnd >= sessionEnd;
+            });
+        });
+        
+        if (availableParticipants.length === 0) {
+            this.showNotification('배치 가능한 참가자가 없습니다', 'info');
+            return;
+        }
+        
+        // 우선순위로 정렬
+        availableParticipants.sort((a, b) => b.priority - a.priority);
+        
+        // 자동 배치 실행
+        let assignedCount = 0;
+        for (let i = 0; i < Math.min(availableSlots, availableParticipants.length); i++) {
+            const participant = availableParticipants[i];
+            
+            // Session 메서드 사용
+            if (session.addParticipant) {
+                if (session.addParticipant(participant.id)) {
+                    assignedCount++;
+                }
+            } else {
+                // 하위 호환성
+                if (!session.assignedParticipants) {
+                    session.assignedParticipants = [];
+                }
+                if (!session.assignedParticipants.includes(participant.id)) {
+                    session.assignedParticipants.push(participant.id);
+                    assignedCount++;
+                }
+            }
+        }
+        
+        if (assignedCount > 0) {
+            this.dataStore.saveToLocalStorage();
+            this.showNotification(`${assignedCount}명의 참가자가 자동 배치되었습니다`, 'success');
+            this.updateAllViews();
+        } else {
+            this.showNotification('자동 배치할 수 없습니다', 'warning');
+        }
+    }
+    
+    // 전체 자동 배치
+    autoAssignAll() {
+        const sessions = this.dataStore.getAllSessions().filter(s => s.enabled);
+        const participants = this.dataStore.getAllParticipants();
+        
+        // 모든 배치 초기화 - Session의 assignedParticipants만 초기화
+        sessions.forEach(s => s.assignedParticipants = []);
+        
+        // 세션을 시간순으로 정렬
+        sessions.sort((a, b) => new Date(a.timeSlot.datetime) - new Date(b.timeSlot.datetime));
+        
+        // 참가자를 우선순위로 정렬
+        participants.sort((a, b) => b.priority - a.priority);
+        
+        let totalAssigned = 0;
+        
+        // 각 참가자를 가능한 첫 번째 세션에 배치
+        for (const participant of participants) {
+            for (const session of sessions) {
+                if (!session.enabled) continue;
+                
+                // 세션 용량 확인
+                if ((session.assignedParticipants || []).length >= (session.capacity || 1)) continue;
+                
+                // 시간 확인
+                const sessionStart = new Date(session.timeSlot.datetime);
+                const sessionEnd = new Date(sessionStart.getTime() + session.timeSlot.duration * 60000);
+                
+                const canFit = participant.availableSlots.some(slot => {
+                    const slotStart = new Date(slot.datetime);
+                    const slotEnd = new Date(slotStart.getTime() + slot.duration * 60000);
+                    return slotStart <= sessionStart && slotEnd >= sessionEnd;
+                });
+                
+                if (canFit) {
+                    // 배치 실행
+                    if (session.addParticipant) {
+                        if (session.addParticipant(participant.id)) {
+                            totalAssigned++;
+                            break;
+                        }
+                    } else {
+                        // 하위 호환성
+                        if (!session.assignedParticipants) {
+                            session.assignedParticipants = [];
+                        }
+                        session.assignedParticipants.push(participant.id);
+                        totalAssigned++;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        this.dataStore.saveToLocalStorage();
+        this.showNotification(
+            `전체 자동 배치 완료: ${totalAssigned}/${participants.length}명 배치됨`, 
+            totalAssigned > 0 ? 'success' : 'warning'
+        );
+        this.updateAllViews();
     }
 
 
@@ -559,6 +918,7 @@ class TimeTetrisApp {
             if (session) {
                 document.getElementById('sessionName').value = session.name;
                 document.getElementById('sessionEnabled').checked = session.enabled;
+                document.getElementById('sessionCapacity').value = session.capacity || 1;
                 if (session.timeSlot) {
                     document.getElementById('sessionDateTime').value = this.toDateTimeLocal(session.timeSlot.datetime);
                     document.getElementById('sessionDuration').value = session.timeSlot.duration;
@@ -583,12 +943,14 @@ class TimeTetrisApp {
 
         const name = document.getElementById('sessionName').value;
         const enabled = document.getElementById('sessionEnabled').checked;
+        const capacity = parseInt(document.getElementById('sessionCapacity').value) || 1;
         const datetime = document.getElementById('sessionDateTime').value;
         const duration = parseInt(document.getElementById('sessionDuration').value);
 
         const sessionData = {
             name,
             enabled,
+            capacity,
             timeSlot: {
                 datetime,
                 duration
@@ -632,13 +994,22 @@ class TimeTetrisApp {
 
 
     unassignSchedule(scheduleId) {
-        const schedule = this.dataStore.getParticipant(scheduleId);
-        if (schedule && schedule.assignedSession) {
-            const session = this.dataStore.getSession(schedule.assignedSession);
-            if (session) {
+        const participant = this.dataStore.getParticipant(scheduleId);
+        if (!participant) return;
+        
+        const session = this.dataStore.getParticipantSession(scheduleId);
+        if (session) {
+            if (session.removeParticipant) {
+                session.removeParticipant(scheduleId);
+            } else if (session.removeSchedule) {
                 session.removeSchedule(scheduleId);
+            } else {
+                // 하위 호환성
+                const index = session.assignedParticipants.indexOf(scheduleId);
+                if (index > -1) {
+                    session.assignedParticipants.splice(index, 1);
+                }
             }
-            schedule.assignedSession = null;
             this.dataStore.saveToLocalStorage();
             this.updateAllViews();
             this.showNotification('배치가 취소되었습니다', 'info');
@@ -762,10 +1133,8 @@ class TimeTetrisApp {
             newSession.addSchedule(schedule.id);
             
             // 일정 업데이트
-            const scheduleObj = this.dataStore.getParticipant(schedule.id);
-            if (scheduleObj) {
-                scheduleObj.assignedSession = toSession.id;
-            }
+            // 참가자 배치는 이미 Session에서 관리됨
+            // scheduleObj.assignedSession 제거됨
             
             this.dataStore.saveToLocalStorage();
             this.updateAllViews();
