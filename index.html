@@ -28,11 +28,11 @@
         </div>
         <div class="header-center">
             <div class="status-bar">
-                <span id="participantCount">참가자: 0개</span>
+                <span id="participantCount">참가자 수: 0</span>
                 <span class="separator">|</span>
-                <span id="sessionCount">세션: 0개</span>
+                <span id="sessionCount">세션 수: 0</span>
                 <span class="separator">|</span>
-                <span id="assignedCount">배치완료: 0개</span>
+                <span id="assignedCount">배치완료: 0</span>
             </div>
         </div>
         <div class="header-right">
@@ -63,10 +63,6 @@
                 <button class="nav-item" data-view="sessions">
                     <i class="fas fa-clock"></i>
                     <span>세션 관리</span>
-                </button>
-                <button class="nav-item" data-view="assignment">
-                    <i class="fas fa-puzzle-piece"></i>
-                    <span>자동 배치</span>
                 </button>
                 <button class="nav-item" data-view="calendar">
                     <i class="fas fa-calendar-alt"></i>
@@ -110,44 +106,6 @@
                 </div>
             </div>
 
-            <!-- Assignment View -->
-            <div id="assignmentView" class="view-panel">
-                <div class="panel-header">
-                    <h2>자동 배치</h2>
-                    <button class="btn btn-success" onclick="app.runAutoAssignment()">
-                        <i class="fas fa-play"></i> 배치 실행
-                    </button>
-                    <button class="btn btn-warning" onclick="app.clearAssignments()">
-                        <i class="fas fa-undo"></i> 배치 초기화
-                    </button>
-                </div>
-                <div class="panel-body">
-                    <div class="assignment-stats">
-                        <div class="stat-card">
-                            <div class="stat-value" id="totalParticipants">0</div>
-                            <div class="stat-label">전체 참가자</div>
-                        </div>
-                        <div class="stat-card success">
-                            <div class="stat-value" id="assignedParticipants">0</div>
-                            <div class="stat-label">배치 완료</div>
-                        </div>
-                        <div class="stat-card warning">
-                            <div class="stat-value" id="unassignedParticipants">0</div>
-                            <div class="stat-label">미배치</div>
-                        </div>
-                        <div class="stat-card info">
-                            <div class="stat-value" id="utilizationRate">0%</div>
-                            <div class="stat-label">배치율</div>
-                        </div>
-                    </div>
-                    <div class="assignment-results">
-                        <h3>배치 결과</h3>
-                        <div id="assignmentResults">
-                            <!-- 배치 결과가 여기 표시됩니다 -->
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Calendar View -->
             <div id="calendarView" class="view-panel">
@@ -298,6 +256,5 @@
     <!-- 애플리케이션 로직 -->
     <script src="js/custom-calendar.js"></script>
     <script src="js/time-tetris-app.js"></script>
-    <script src="js/scheduler.js"></script>
 </body>
 </html>

@@ -17,14 +17,12 @@
  * 아키텍처:
  * - MVC 패턴의 Controller 역할
  * - DataStore를 통한 데이터 관리
- * - Scheduler를 통한 자동 배치 로직
  * - FullCalendar 라이브러리 활용
  * 
  * 상태 관리:
  * - currentView: 현재 활성 뷰
  * - editingScheduleId/editingSessionId: 편집 중인 항목 추적
  * - calendar: FullCalendar 인스턴스
- * - scheduler: 자동 배치 알고리즘 인스턴스
  */
 class TimeTetrisApp {
     /**
@@ -38,7 +36,7 @@ class TimeTetrisApp {
         /** @type {CustomCalendar|null} 커스텀 캘린더 인스턴스 */
         this.calendar = null;
         
-        /** @type {string} 현재 활성화된 뷰 ('participants'|'sessions'|'assignment'|'calendar') */
+        /** @type {string} 현재 활성화된 뷰 ('participants'|'sessions'|'calendar') */
         this.currentView = 'participants';
         
         /** @type {string|null} 현재 편집 중인 참가자의 ID */
@@ -47,8 +45,6 @@ class TimeTetrisApp {
         /** @type {string|null} 현재 편집 중인 세션의 ID */
         this.editingSessionId = null;
         
-        /** @type {Scheduler|null} 자동 배치 알고리즘 인스턴스 */
-        this.scheduler = null;
         
         // 애플리케이션 초기화
         this.init();
@@ -130,14 +126,13 @@ class TimeTetrisApp {
         this.updateHeader();
         this.updateParticipantsList();
         this.updateSessionsList();
-        this.updateAssignmentView();
         // 캘린더는 뷰 전환 시에만 업데이트
     }
 
     updateHeader() {
         const stats = this.dataStore.getStatistics();
-        document.getElementById('participantCount').textContent = `참가자: ${stats.totalParticipants}개`;
-        document.getElementById('sessionCount').textContent = `세션: ${stats.totalSessions}개`;
+        document.getElementById('participantCount').textContent = `참가자 수: ${stats.totalParticipants}`;
+        document.getElementById('sessionCount').textContent = `세션 수: ${stats.totalSessions}`;
         document.getElementById('assignedCount').textContent = `배치완료: ${stats.assignedParticipants}개`;
     }
 
@@ -292,66 +287,6 @@ class TimeTetrisApp {
         `;
     }
 
-    updateAssignmentView() {
-        const stats = this.dataStore.getStatistics();
-        
-        document.getElementById('totalParticipants').textContent = stats.totalParticipants;
-        document.getElementById('assignedParticipants').textContent = stats.assignedParticipants;
-        document.getElementById('unassignedParticipants').textContent = stats.unassignedParticipants;
-        document.getElementById('utilizationRate').textContent = stats.utilizationRate + '%';
-
-        this.updateAssignmentResults();
-    }
-
-    updateAssignmentResults() {
-        const container = document.getElementById('assignmentResults');
-        const sessions = this.dataStore.getAllSessions().filter(s => s.enabled);
-        
-        if (sessions.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-info-circle"></i>
-                    <p>활성화된 세션이 없습니다. 먼저 세션을 추가하세요.</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = sessions.map(session => {
-            const datetime = new Date(session.timeSlot.datetime);
-            const endTime = new Date(datetime.getTime() + session.timeSlot.duration * 60000);
-            const assignedIds = session.assignedParticipants || session.assignedSchedules || [];
-            const participants = assignedIds.map(id => this.dataStore.getParticipant(id)).filter(p => p);
-            
-            return `
-                <div class="session-group">
-                    <div class="session-group-header">
-                        <div class="session-group-title">${this.escapeHtml(session.name)}</div>
-                        <div class="session-group-meta">
-                            <span>${this.formatDate(datetime)} ${this.formatTime(datetime)}~${this.formatTime(endTime)}</span>
-                            <span>${session.timeSlot.duration}분</span>
-                            <span class="item-badge ${participants.length > 0 ? 'success' : 'warning'}">
-                                ${participants.length}명 배치
-                            </span>
-                        </div>
-                    </div>
-                    <div class="assigned-schedules">
-                        ${participants.length > 0 ? 
-                            participants.map(participant => `
-                                <div class="assigned-schedule">
-                                    <div class="assigned-schedule-name">${this.escapeHtml(participant.name)}</div>
-                                    <button class="btn btn-sm btn-danger" onclick="app.unassignParticipant('${participant.id}')">
-                                        <i class="fas fa-unlink"></i> 배치 취소
-                                    </button>
-                                </div>
-                            `).join('') :
-                            '<div class="empty-slot">배치된 참가자가 없습니다</div>'
-                        }
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
 
     // 참가자 관리 메서드
     showParticipantModal(participantId = null) {
@@ -509,19 +444,6 @@ class TimeTetrisApp {
         }
     }
 
-    unassignParticipant(participantId) {
-        const participant = this.dataStore.getParticipant(participantId);
-        if (participant && participant.assignedSession) {
-            const session = this.dataStore.getSession(participant.assignedSession);
-            if (session) {
-                session.removeParticipant(participantId);
-            }
-            participant.assignedSession = null;
-            this.dataStore.saveToLocalStorage();
-            this.showNotification('배치가 해제되었습니다', 'info');
-            this.updateAllViews();
-        }
-    }
 
     addTimeSlot() {
         const container = document.getElementById('availableSlots');
@@ -708,35 +630,6 @@ class TimeTetrisApp {
         }
     }
 
-    // 배치 관리 메서드
-    runAutoAssignment() {
-        if (!this.scheduler) {
-            this.scheduler = new Scheduler(this.dataStore);
-        }
-
-        const result = this.scheduler.autoAssign();
-
-        this.showNotification(
-            `배치 완료: ${result.assigned}개 성공, ${result.failed}개 실패`, 
-            result.failed > 0 ? 'warning' : 'success'
-        );
-        
-        // 모든 뷰 업데이트
-        this.updateAllViews();
-        
-        // 캘린더가 현재 활성 뷰인 경우 새로 초기화
-        if (this.currentView === 'calendar') {
-            this.initializeCalendarView();
-        }
-    }
-
-    clearAssignments() {
-        if (confirm('모든 배치를 초기화하시겠습니까?')) {
-            this.dataStore.clearAllAssignments();
-            this.showNotification('모든 배치가 초기화되었습니다', 'info');
-            this.updateAllViews();
-        }
-    }
 
     unassignSchedule(scheduleId) {
         const schedule = this.dataStore.getParticipant(scheduleId);
@@ -1069,12 +962,6 @@ class TimeTetrisApp {
         return this.deleteParticipant(scheduleId);
     }
 
-    /**
-     * @deprecated 하위 호환성을 위한 메서드. unassignParticipant를 사용하세요.
-     */
-    unassignSchedule(scheduleId) {
-        return this.unassignParticipant(scheduleId);
-    }
 
     showHelp() {
         alert(`TimeTetris 사용 가이드

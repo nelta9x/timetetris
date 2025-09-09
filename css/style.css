@@ -368,13 +368,6 @@ body {
     width: 100px;
 }
 
-/* Assignment Stats */
-.assignment-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
-}
 
 .stat-card {
     background: var(--bg-secondary);
@@ -410,17 +403,6 @@ body {
     color: var(--text-secondary);
 }
 
-/* Assignment Results */
-.assignment-results h3 {
-    margin-bottom: 16px;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-#assignmentResults {
-    display: grid;
-    gap: 16px;
-}
 
 .session-group {
     background: var(--bg-secondary);
@@ -680,9 +662,6 @@ body {
         padding: 16px;
     }
     
-    .assignment-stats {
-        grid-template-columns: 1fr 1fr;
-    }
     
     .header-center {
         display: none;

@@ -200,19 +200,6 @@ class DataStore {
     // 배치 관리 메서드들
     // ========================
 
-    /**
-     * 모든 배치 초기화
-     * 모든 일정의 배치 상태를 해제하고 모든 세션을 비웁니다.
-     */
-    clearAllAssignments() {
-        this.participants.forEach(participant => {
-            participant.assignedSession = null;
-        });
-        this.sessions.forEach(session => {
-            session.assignedParticipants = [];
-        });
-        this.saveToLocalStorage();
-    }
 
     // ========================
     // 데이터 영속성 메서드들
