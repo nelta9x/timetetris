@@ -1,23 +1,23 @@
 /**
- * Schedule 클래스
+ * Participant 클래스
  * 
- * 개별 일정(스케줄)을 나타내는 클래스입니다.
- * 각 일정은 이름, 우선순위, 가능한 시간대 등의 정보를 가지며,
- * 세션에 배치될 수 있는지 확인하는 로직을 포함합니다.
+ * 미팅 참가자를 나타내는 클래스입니다.
+ * 각 참가자는 이름, 우선순위, 가능한 시간대 등의 정보를 가지며,
+ * 미팅 세션에 배치될 수 있는지 확인하는 로직을 포함합니다.
  * 
  * 주요 책임:
- * - 일정의 기본 정보 관리 (이름, 메모, 우선순위)
+ * - 참가자의 기본 정보 관리 (이름, 메모, 우선순위)
  * - 가능한 시간대(availableSlots) 관리
  * - 배치된 세션 정보 추적
- * - 특정 시간대에 일정이 가능한지 검증
+ * - 특정 시간대에 참가가 가능한지 검증
  * - 세션과의 시간 호환성 확인
  */
-class Schedule {
+class Participant {
     /**
-     * Schedule 생성자
-     * @param {Object} data - 일정 데이터
+     * Participant 생성자
+     * @param {Object} data - 참가자 데이터
      * @param {string} data.id - 고유 ID (선택사항, 자동 생성)
-     * @param {string} data.name - 일정 이름
+     * @param {string} data.name - 참가자 이름
      * @param {string} data.note - 메모 (선택사항)
      * @param {Array} data.availableSlots - 가능한 시간대 배열
      * @param {string} data.assignedSession - 배치된 세션 ID (선택사항)
@@ -27,21 +27,46 @@ class Schedule {
         this.id = data.id || this.generateGUID();
         this.name = data.name || '';
         this.note = data.note || '';
-        this.availableSlots = data.availableSlots || [];
+        this.availableSlots = data.hasOwnProperty('availableSlots') ? data.availableSlots : this.createDefaultTimeSlot();
         this.assignedSession = data.assignedSession || null;
         this.priority = data.priority || 1;
     }
 
     /**
      * 고유 ID 생성
-     * @returns {string} 고유한 일정 ID
+     * @returns {string} 고유한 참가자 ID
      */
     generateGUID() {
-        return 'schedule-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        return 'participant-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     }
 
     /**
-     * 특정 시간대에 일정이 가능한지 확인
+     * 기본 시간대 생성
+     * 새로운 참가자가 생성될 때 기본적으로 하나의 시간대를 제공합니다.
+     * @returns {Array} 기본 시간대 배열 (1개 요소)
+     */
+    createDefaultTimeSlot() {
+        const now = new Date();
+        // 다음 주 월요일 09:00으로 기본 시작 시간 설정
+        const nextMonday = new Date(now);
+        nextMonday.setDate(now.getDate() + (1 + 7 - now.getDay()) % 7);
+        nextMonday.setHours(9, 0, 0, 0);
+        
+        // 기본 종료 시간은 시작 시간 + 2시간
+        const endTime = new Date(nextMonday);
+        endTime.setHours(11, 0, 0, 0);
+        
+        // 지속 시간 계산 (분 단위)
+        const duration = (endTime.getTime() - nextMonday.getTime()) / 60000;
+        
+        return [{
+            datetime: nextMonday.toISOString(),
+            duration: duration
+        }];
+    }
+
+    /**
+     * 특정 시간대에 참가가 가능한지 확인
      * @param {string} datetime - 확인할 시작 시간 (ISO 문자열)
      * @param {number} duration - 지속 시간 (분)
      * @returns {boolean} 가능하면 true, 불가능하면 false
@@ -60,7 +85,7 @@ class Schedule {
     }
 
     /**
-     * 세션에 이 일정이 배치 가능한지 확인
+     * 세션에 이 참가자가 배치 가능한지 확인
      * @param {Session} session - 확인할 세션 객체
      * @returns {boolean} 배치 가능하면 true, 불가능하면 false
      */
@@ -74,14 +99,14 @@ class Schedule {
             const slotStart = new Date(slot.datetime);
             const slotEnd = new Date(slotStart.getTime() + slot.duration * 60000);
 
-            // 세션 시간이 일정의 가능한 시간 슬롯 내에 완전히 포함되는지 확인
+            // 세션 시간이 참가자의 가능한 시간 슬롯 내에 완전히 포함되는지 확인
             return sessionStart >= slotStart && sessionEnd <= slotEnd;
         });
     }
 
     /**
-     * 일정 객체를 JSON으로 직렬화
-     * @returns {Object} 직렬화된 일정 데이터
+     * 참가자 객체를 JSON으로 직렬화
+     * @returns {Object} 직렬화된 참가자 데이터
      */
     toJSON() {
         return {
@@ -95,7 +120,7 @@ class Schedule {
     }
 
     /**
-     * 일정이 현재 배치되어 있는지 확인
+     * 참가자가 현재 배치되어 있는지 확인
      * @returns {boolean} 배치되어 있으면 true
      */
     isAssigned() {

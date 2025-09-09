@@ -2,10 +2,10 @@
  * Scheduler 클래스
  * 
  * TimeTetris 애플리케이션의 핵심 자동 배치 알고리즘을 담당하는 클래스입니다.
- * 일정(Schedule)들을 세션(Session)에 최적으로 배치하는 다양한 알고리즘을 제공합니다.
+ * 참가자(Participant)들을 세션(Session)에 최적으로 배치하는 다양한 알고리즘을 제공합니다.
  * 
  * 주요 책임:
- * - 일정과 세션 간의 시간 호환성 검증
+ * - 참가자와 세션 간의 시간 호환성 검증
  * - 우선순위 기반 자동 배치 알고리즘 실행
  * - Greedy 알고리즘과 백트래킹 알고리즘 제공
  * - 배치 결과 통계 및 분석
@@ -72,32 +72,32 @@ class Scheduler {
 
         // 활성화된 세션과 일정 가져오기
         const sessions = this.dataStore.getAllSessions().filter(s => s.enabled);
-        const schedules = this.dataStore.getAllSchedules();
+        const participants = this.dataStore.getAllParticipants();
 
-        if (sessions.length === 0 || schedules.length === 0) {
-            return { assigned: 0, failed: schedules.length };
+        if (sessions.length === 0 || participants.length === 0) {
+            return { assigned: 0, failed: participants.length };
         }
 
-        // 우선순위로 일정 정렬 (높은 우선순위 먼저)
-        const sortedSchedules = [...schedules].sort((a, b) => b.priority - a.priority);
+        // 우선순위로 참가자 정렬 (높은 우선순위 먼저)
+        const sortedParticipants = [...participants].sort((a, b) => b.priority - a.priority);
 
-        // 각 일정에 대해 가능한 세션 찾기
-        const possibleAssignments = this.findPossibleAssignments(sortedSchedules, sessions);
+        // 각 참가자에 대해 가능한 세션 찾기
+        const possibleAssignments = this.findPossibleAssignments(sortedParticipants, sessions);
 
         // 최대 매칭 알고리즘 실행
-        const assignments = this.findMaximumMatching(possibleAssignments, sortedSchedules, sessions);
+        const assignments = this.findMaximumMatching(possibleAssignments, sortedParticipants, sessions);
 
         // 배치 실행
         let assignedCount = 0;
         let failedCount = 0;
 
-        assignments.forEach((sessionId, scheduleId) => {
+        assignments.forEach((sessionId, participantId) => {
             if (sessionId) {
-                const schedule = this.dataStore.getSchedule(scheduleId);
+                const participant = this.dataStore.getParticipant(participantId);
                 const session = this.dataStore.getSession(sessionId);
                 
-                if (schedule && session && session.addSchedule(scheduleId)) {
-                    schedule.assignedSession = sessionId;
+                if (participant && session && session.addParticipant(participantId)) {
+                    participant.assignedSession = sessionId;
                     assignedCount++;
                 } else {
                     failedCount++;
@@ -208,7 +208,7 @@ class Scheduler {
      */
     optimizedAssign() {
         const sessions = this.dataStore.getAllSessions().filter(s => s.enabled);
-        const schedules = this.dataStore.getAllSchedules();
+        const participants = this.dataStore.getAllParticipants();
 
         if (sessions.length === 0 || schedules.length === 0) {
             return { assigned: 0, failed: schedules.length };
@@ -367,7 +367,7 @@ class Scheduler {
             sessionUtilization: []
         };
 
-        const schedules = this.dataStore.getAllSchedules();
+        const participants = this.dataStore.getAllParticipants();
         const sessions = this.dataStore.getAllSessions();
 
         stats.totalSchedules = schedules.length;
@@ -422,7 +422,7 @@ class Scheduler {
      */
     generateSuggestions() {
         const suggestions = [];
-        const unassignedSchedules = this.dataStore.getAllSchedules().filter(s => !s.assignedSession);
+        const unassignedParticipants = this.dataStore.getAllParticipants().filter(p => !p.assignedSession);
         const underutilizedSessions = this.dataStore.getAllSessions().filter(s => 
             s.enabled && s.assignedSchedules.length === 0
         );

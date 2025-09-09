@@ -38,11 +38,11 @@ class TimeTetrisApp {
         /** @type {CustomCalendar|null} 커스텀 캘린더 인스턴스 */
         this.calendar = null;
         
-        /** @type {string} 현재 활성화된 뷰 ('schedules'|'sessions'|'assignment'|'calendar') */
-        this.currentView = 'schedules';
+        /** @type {string} 현재 활성화된 뷰 ('participants'|'sessions'|'assignment'|'calendar') */
+        this.currentView = 'participants';
         
-        /** @type {string|null} 현재 편집 중인 일정의 ID */
-        this.editingScheduleId = null;
+        /** @type {string|null} 현재 편집 중인 참가자의 ID */
+        this.editingParticipantId = null;
         
         /** @type {string|null} 현재 편집 중인 세션의 ID */
         this.editingSessionId = null;
@@ -75,10 +75,10 @@ class TimeTetrisApp {
         });
 
         // 검색 이벤트
-        const searchInput = document.getElementById('scheduleSearch');
+        const searchInput = document.getElementById('participantSearch');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
-                this.filterSchedules(e.target.value);
+                this.filterParticipants(e.target.value);
             });
         }
 
@@ -128,7 +128,7 @@ class TimeTetrisApp {
 
     updateAllViews() {
         this.updateHeader();
-        this.updateSchedulesList();
+        this.updateParticipantsList();
         this.updateSessionsList();
         this.updateAssignmentView();
         // 캘린더는 뷰 전환 시에만 업데이트
@@ -136,35 +136,47 @@ class TimeTetrisApp {
 
     updateHeader() {
         const stats = this.dataStore.getStatistics();
-        document.getElementById('scheduleCount').textContent = `일정: ${stats.totalSchedules}개`;
+        document.getElementById('participantCount').textContent = `참가자: ${stats.totalParticipants}개`;
         document.getElementById('sessionCount').textContent = `세션: ${stats.totalSessions}개`;
-        document.getElementById('assignedCount').textContent = `배치완료: ${stats.assignedSchedules}개`;
+        document.getElementById('assignedCount').textContent = `배치완료: ${stats.assignedParticipants}개`;
     }
 
-    updateSchedulesList() {
-        const container = document.getElementById('schedulesList');
-        const schedules = this.dataStore.getAllSchedules();
+    updateParticipantsList() {
+        const container = document.getElementById('participantsList');
+        const participants = this.dataStore.getAllParticipants();
 
-        if (schedules.length === 0) {
+        if (participants.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <i class="fas fa-calendar-plus"></i>
-                    <h3>일정이 없습니다</h3>
-                    <p>새 일정을 추가하여 시작하세요</p>
+                    <i class="fas fa-user-plus"></i>
+                    <h3>참가자가 없습니다</h3>
+                    <p>새 참가자를 추가하여 시작하세요</p>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = schedules.map(schedule => {
-            const isAssigned = !!schedule.assignedSession;
-            const session = isAssigned ? this.dataStore.getSession(schedule.assignedSession) : null;
+        container.innerHTML = participants.map(participant => {
+            const isAssigned = !!participant.assignedSession;
+            const session = isAssigned ? this.dataStore.getSession(participant.assignedSession) : null;
             
             // 가능 시간 목록 생성 (최대 5개까지만 표시)
-            const availableSlotLabels = schedule.availableSlots.map(slot => {
+            const availableSlots = participant.availableSlots || [];
+            const availableSlotLabels = availableSlots.map(slot => {
                 const start = new Date(slot.datetime);
                 const end = new Date(start.getTime() + slot.duration * 60000);
-                return `${this.formatDate(start)} ${this.formatTime(start)}-${this.formatTime(end)}`;
+                
+                // 시작 날짜와 종료 날짜가 같은지 확인
+                const startDateStr = this.formatDate(start);
+                const endDateStr = this.formatDate(end);
+                
+                if (startDateStr === endDateStr) {
+                    // 같은 날: "2024.01.15 09:00~11:00"
+                    return `${startDateStr} ${this.formatTime(start)}~${this.formatTime(end)}`;
+                } else {
+                    // 다른 날: "2024.01.15 09:00~2024.01.16 11:00"
+                    return `${startDateStr} ${this.formatTime(start)}~${endDateStr} ${this.formatTime(end)}`;
+                }
             });
             
             const maxDisplaySlots = 5;
@@ -172,20 +184,20 @@ class TimeTetrisApp {
             const hasMoreSlots = availableSlotLabels.length > maxDisplaySlots;
             
             return `
-                <div class="item-card ${isAssigned ? 'assigned' : ''}" data-id="${schedule.id}">
+                <div class="item-card ${isAssigned ? 'assigned' : ''}" data-id="${participant.id}">
                     <div class="item-header">
-                        <div class="item-title">${this.escapeHtml(schedule.name)}</div>
+                        <div class="item-title">${this.escapeHtml(participant.name)}</div>
                         <div class="item-badge ${isAssigned ? 'success' : 'warning'}">
                             ${isAssigned ? '배치됨' : '미배치'}
                         </div>
                     </div>
-                    ${schedule.note ? `<div class="item-note">${this.escapeHtml(schedule.note)}</div>` : ''}
+                    ${participant.note ? `<div class="item-note">${this.escapeHtml(participant.note)}</div>` : ''}
                     <div class="item-meta">
-                        <span><i class="fas fa-star"></i> 우선순위: ${schedule.priority}</span>
-                        <span><i class="fas fa-clock"></i> 가능 시간: ${schedule.availableSlots.length}개</span>
+                        <span><i class="fas fa-star"></i> 우선순위: ${participant.priority}</span>
+                        <span><i class="fas fa-clock"></i> 가능 시간: ${availableSlots.length}개</span>
                         ${session ? `<span><i class="fas fa-link"></i> ${this.escapeHtml(session.name)}</span>` : ''}
                     </div>
-                    ${schedule.availableSlots.length > 0 ? `
+                    ${availableSlots.length > 0 ? `
                         <div class="available-slots">
                             <div class="slot-list">
                                 ${displaySlots.map(slot => `<span class="slot-tag">${slot}</span>`).join('')}
@@ -194,10 +206,10 @@ class TimeTetrisApp {
                         </div>
                     ` : ''}
                     <div class="item-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="app.editSchedule('${schedule.id}')">
+                        <button class="btn btn-sm btn-secondary" onclick="app.editParticipant('${participant.id}')">
                             <i class="fas fa-edit"></i> 편집
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="app.deleteSchedule('${schedule.id}')">
+                        <button class="btn btn-sm btn-danger" onclick="app.deleteParticipant('${participant.id}')">
                             <i class="fas fa-trash"></i> 삭제
                         </button>
                     </div>
@@ -239,9 +251,9 @@ class TimeTetrisApp {
                         <span><i class="fas fa-hourglass"></i> ${session.timeSlot.duration}분</span>
                     </div>
                     <div class="item-meta">
-                        <span><i class="fas fa-users"></i> 배치된 일정: ${session.assignedSchedules.length}개</span>
+                        <span><i class="fas fa-users"></i> 배치된 참가자: ${(session.assignedParticipants || []).length}개</span>
                     </div>
-                    ${session.assignedSchedules.length > 0 ? this.renderAssignedSchedulesInSession(session) : ''}
+                    ${(session.assignedParticipants || session.assignedSchedules || []).length > 0 ? this.renderAssignedSchedulesInSession(session) : ''}
                     <div class="item-actions">
                         <button class="btn btn-sm btn-secondary" onclick="app.editSession('${session.id}')">
                             <i class="fas fa-edit"></i> 편집
@@ -261,14 +273,15 @@ class TimeTetrisApp {
     }
 
     renderAssignedSchedulesInSession(session) {
-        const scheduleNames = session.assignedSchedules.map(id => {
-            const schedule = this.dataStore.getSchedule(id);
-            return schedule ? this.escapeHtml(schedule.name) : 'Unknown';
+        const assignedIds = session.assignedParticipants || session.assignedSchedules || [];
+        const participantNames = assignedIds.map(id => {
+            const participant = this.dataStore.getParticipant(id);
+            return participant ? this.escapeHtml(participant.name) : 'Unknown';
         }).join(', ');
 
         return `
             <div class="assigned-in-session">
-                <small><strong>배치된 일정:</strong> ${scheduleNames}</small>
+                <small><strong>배치된 참가자:</strong> ${participantNames}</small>
             </div>
         `;
     }
@@ -276,9 +289,9 @@ class TimeTetrisApp {
     updateAssignmentView() {
         const stats = this.dataStore.getStatistics();
         
-        document.getElementById('totalSchedules').textContent = stats.totalSchedules;
-        document.getElementById('assignedSchedules').textContent = stats.assignedSchedules;
-        document.getElementById('unassignedSchedules').textContent = stats.unassignedSchedules;
+        document.getElementById('totalParticipants').textContent = stats.totalParticipants;
+        document.getElementById('assignedParticipants').textContent = stats.assignedParticipants;
+        document.getElementById('unassignedParticipants').textContent = stats.unassignedParticipants;
         document.getElementById('utilizationRate').textContent = stats.utilizationRate + '%';
 
         this.updateAssignmentResults();
@@ -300,31 +313,33 @@ class TimeTetrisApp {
 
         container.innerHTML = sessions.map(session => {
             const datetime = new Date(session.timeSlot.datetime);
-            const schedules = session.assignedSchedules.map(id => this.dataStore.getSchedule(id)).filter(s => s);
+            const endTime = new Date(datetime.getTime() + session.timeSlot.duration * 60000);
+            const assignedIds = session.assignedParticipants || session.assignedSchedules || [];
+            const participants = assignedIds.map(id => this.dataStore.getParticipant(id)).filter(p => p);
             
             return `
                 <div class="session-group">
                     <div class="session-group-header">
                         <div class="session-group-title">${this.escapeHtml(session.name)}</div>
                         <div class="session-group-meta">
-                            <span>${this.formatDate(datetime)} ${this.formatTime(datetime)}</span>
+                            <span>${this.formatDate(datetime)} ${this.formatTime(datetime)}~${this.formatTime(endTime)}</span>
                             <span>${session.timeSlot.duration}분</span>
-                            <span class="item-badge ${schedules.length > 0 ? 'success' : 'warning'}">
-                                ${schedules.length}명 배치
+                            <span class="item-badge ${participants.length > 0 ? 'success' : 'warning'}">
+                                ${participants.length}명 배치
                             </span>
                         </div>
                     </div>
                     <div class="assigned-schedules">
-                        ${schedules.length > 0 ? 
-                            schedules.map(schedule => `
+                        ${participants.length > 0 ? 
+                            participants.map(participant => `
                                 <div class="assigned-schedule">
-                                    <div class="assigned-schedule-name">${this.escapeHtml(schedule.name)}</div>
-                                    <button class="btn btn-sm btn-danger" onclick="app.unassignSchedule('${schedule.id}')">
+                                    <div class="assigned-schedule-name">${this.escapeHtml(participant.name)}</div>
+                                    <button class="btn btn-sm btn-danger" onclick="app.unassignParticipant('${participant.id}')">
                                         <i class="fas fa-unlink"></i> 배치 취소
                                     </button>
                                 </div>
                             `).join('') :
-                            '<div class="empty-slot">배치된 일정이 없습니다</div>'
+                            '<div class="empty-slot">배치된 참가자가 없습니다</div>'
                         }
                     </div>
                 </div>
@@ -332,24 +347,24 @@ class TimeTetrisApp {
         }).join('');
     }
 
-    // 일정 관리 메서드
-    showScheduleModal(scheduleId = null) {
-        this.editingScheduleId = scheduleId;
-        const modal = document.getElementById('scheduleModal');
-        const form = document.getElementById('scheduleForm');
+    // 참가자 관리 메서드
+    showParticipantModal(participantId = null) {
+        this.editingParticipantId = participantId;
+        const modal = document.getElementById('participantModal');
+        const form = document.getElementById('participantForm');
         
         form.reset();
         
-        if (scheduleId) {
-            const schedule = this.dataStore.getSchedule(scheduleId);
-            if (schedule) {
-                document.getElementById('scheduleName').value = schedule.name;
-                document.getElementById('scheduleNote').value = schedule.note || '';
-                document.getElementById('schedulePriority').value = schedule.priority;
+        if (participantId) {
+            const participant = this.dataStore.getParticipant(participantId);
+            if (participant) {
+                document.getElementById('participantName').value = participant.name;
+                document.getElementById('participantNote').value = participant.note || '';
+                document.getElementById('participantPriority').value = participant.priority;
                 
                 // 시간 슬롯 표시
                 const slotsContainer = document.getElementById('availableSlots');
-                slotsContainer.innerHTML = schedule.availableSlots.map((slot, index) => {
+                slotsContainer.innerHTML = participant.availableSlots.map((slot, index) => {
                     const startDate = new Date(slot.datetime);
                     const endDate = new Date(startDate.getTime() + slot.duration * 60000);
                     
@@ -372,32 +387,56 @@ class TimeTetrisApp {
                     `;
                 }).join('');
                 
-                if (schedule.availableSlots.length === 0) {
+                if (participant.availableSlots.length === 0) {
                     this.addTimeSlot();
                 }
             }
         } else {
-            this.addTimeSlot();
+            // 새 참가자의 경우 기본 시간대를 UI에 표시
+            const tempParticipant = new Participant();
+            const slotsContainer = document.getElementById('availableSlots');
+            slotsContainer.innerHTML = tempParticipant.availableSlots.map((slot, index) => {
+                const startDate = new Date(slot.datetime);
+                const endDate = new Date(startDate.getTime() + slot.duration * 60000);
+                
+                return `
+                    <div class="time-slot">
+                        <div class="time-slot-inputs">
+                            <div class="time-input-group">
+                                <label class="time-input-label">시작</label>
+                                <input type="datetime-local" class="slot-start-datetime" value="${this.toDateTimeLocal(slot.datetime)}">
+                            </div>
+                            <div class="time-input-group">
+                                <label class="time-input-label">종료</label>
+                                <input type="datetime-local" class="slot-end-datetime" value="${this.toDateTimeLocal(endDate.toISOString())}">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="app.removeTimeSlot(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
         }
         
         modal.classList.add('active');
     }
 
-    closeScheduleModal() {
-        document.getElementById('scheduleModal').classList.remove('active');
-        this.editingScheduleId = null;
+    closeParticipantModal() {
+        document.getElementById('participantModal').classList.remove('active');
+        this.editingParticipantId = null;
     }
 
-    saveSchedule() {
-        const form = document.getElementById('scheduleForm');
+    saveParticipant() {
+        const form = document.getElementById('participantForm');
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
         }
 
-        const name = document.getElementById('scheduleName').value;
-        const note = document.getElementById('scheduleNote').value;
-        const priority = parseInt(document.getElementById('schedulePriority').value) || 1;
+        const name = document.getElementById('participantName').value;
+        const note = document.getElementById('participantNote').value;
+        const priority = parseInt(document.getElementById('participantPriority').value) || 1;
         
         // 시간 슬롯 수집
         const availableSlots = [];
@@ -432,34 +471,48 @@ class TimeTetrisApp {
             return;
         }
 
-        const scheduleData = {
+        const participantData = {
             name,
             note,
             priority,
             availableSlots
         };
 
-        if (this.editingScheduleId) {
-            this.dataStore.updateSchedule(this.editingScheduleId, scheduleData);
-            this.showNotification('일정이 수정되었습니다', 'success');
+        if (this.editingParticipantId) {
+            this.dataStore.updateParticipant(this.editingParticipantId, participantData);
+            this.showNotification('참가자가 수정되었습니다', 'success');
         } else {
-            const schedule = new Schedule(scheduleData);
-            this.dataStore.addSchedule(schedule);
-            this.showNotification('일정이 추가되었습니다', 'success');
+            const participant = new Participant(participantData);
+            this.dataStore.addParticipant(participant);
+            this.showNotification('참가자가 추가되었습니다', 'success');
         }
 
-        this.closeScheduleModal();
+        this.closeParticipantModal();
         this.updateAllViews();
     }
 
-    editSchedule(scheduleId) {
-        this.showScheduleModal(scheduleId);
+    editParticipant(participantId) {
+        this.showParticipantModal(participantId);
     }
 
-    deleteSchedule(scheduleId) {
-        if (confirm('정말로 이 일정을 삭제하시겠습니까?')) {
-            this.dataStore.deleteSchedule(scheduleId);
-            this.showNotification('일정이 삭제되었습니다', 'info');
+    deleteParticipant(participantId) {
+        if (confirm('정말로 이 참가자를 삭제하시겠습니까?')) {
+            this.dataStore.deleteParticipant(participantId);
+            this.showNotification('참가자가 삭제되었습니다', 'info');
+            this.updateAllViews();
+        }
+    }
+
+    unassignParticipant(participantId) {
+        const participant = this.dataStore.getParticipant(participantId);
+        if (participant && participant.assignedSession) {
+            const session = this.dataStore.getSession(participant.assignedSession);
+            if (session) {
+                session.removeParticipant(participantId);
+            }
+            participant.assignedSession = null;
+            this.dataStore.saveToLocalStorage();
+            this.showNotification('배치가 해제되었습니다', 'info');
             this.updateAllViews();
         }
     }
@@ -638,11 +691,11 @@ class TimeTetrisApp {
             onEventClick: (event, e) => {
                 if (event.type === 'session') {
                     this.editSession(event.id);
-                } else if (event.assignedSchedules) {
-                    // 세션 내 일정 클릭
+                } else if (event.assignedParticipants || event.assignedSchedules) {
+                    // 세션 내 참가자 클릭
                     const target = e.target.closest('.schedule-in-session');
-                    if (target && target.dataset.scheduleId) {
-                        this.editSchedule(target.dataset.scheduleId);
+                    if (target && target.dataset.participantId) {
+                        this.editParticipant(target.dataset.participantId);
                     }
                 }
             },
@@ -678,14 +731,15 @@ class TimeTetrisApp {
                 const startTime = new Date(session.timeSlot.datetime);
                 const endTime = new Date(startTime.getTime() + session.timeSlot.duration * 60000);
 
-                // 배치된 일정 정보 추가
-                const assignedSchedules = session.assignedSchedules.map(scheduleId => {
-                    const schedule = this.dataStore.getSchedule(scheduleId);
-                    return schedule ? {
-                        id: schedule.id,
-                        name: schedule.name
+                // 배치된 참가자 정보 추가
+                const assignedIds = session.assignedParticipants || session.assignedSchedules || [];
+                const assignedParticipants = assignedIds.map(participantId => {
+                    const participant = this.dataStore.getParticipant(participantId);
+                    return participant ? {
+                        id: participant.id,
+                        name: participant.name
                     } : null;
-                }).filter(s => s);
+                }).filter(p => p);
 
                 events.push({
                     id: session.id,
@@ -693,7 +747,8 @@ class TimeTetrisApp {
                     title: session.name,
                     start: startTime.toISOString(),
                     end: endTime.toISOString(),
-                    assignedSchedules: assignedSchedules
+                    assignedParticipants: assignedParticipants,
+                    assignedSchedules: assignedParticipants // 하위 호환성
                 });
             }
         });
@@ -843,8 +898,8 @@ class TimeTetrisApp {
         return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
-    filterSchedules(searchTerm) {
-        const cards = document.querySelectorAll('#schedulesList .item-card');
+    filterParticipants(searchTerm) {
+        const cards = document.querySelectorAll('#participantsList .item-card');
         const term = searchTerm.toLowerCase();
         
         cards.forEach(card => {
@@ -890,8 +945,54 @@ class TimeTetrisApp {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.classList.remove('active');
         });
-        this.editingScheduleId = null;
+        this.editingParticipantId = null;
         this.editingSessionId = null;
+    }
+
+    // ========================
+    // 하위 호환성 메서드들
+    // ========================
+
+    /**
+     * @deprecated 하위 호환성을 위한 메서드. showParticipantModal을 사용하세요.
+     */
+    showScheduleModal(scheduleId = null) {
+        return this.showParticipantModal(scheduleId);
+    }
+
+    /**
+     * @deprecated 하위 호환성을 위한 메서드. closeParticipantModal을 사용하세요.
+     */
+    closeScheduleModal() {
+        return this.closeParticipantModal();
+    }
+
+    /**
+     * @deprecated 하위 호환성을 위한 메서드. saveParticipant를 사용하세요.
+     */
+    saveSchedule() {
+        return this.saveParticipant();
+    }
+
+    /**
+     * @deprecated 하위 호환성을 위한 메서드. editParticipant를 사용하세요.
+     */
+    editSchedule(scheduleId) {
+        return this.editParticipant(scheduleId);
+    }
+
+    /**
+     * @deprecated 하위 호환성을 위한 메서드. deleteParticipant를 사용하세요.
+     */
+    deleteSchedule(scheduleId) {
+        return this.deleteParticipant(scheduleId);
+    }
+
+    /**
+     * @deprecated 하위 호환성을 위한 메서드. unassignParticipant를 사용하세요.
+     */
+    unassignSchedule(scheduleId) {
+        return this.unassignParticipant(scheduleId);
     }
 
     showHelp() {
@@ -910,9 +1011,13 @@ class TimeTetrisApp {
     }
 }
 
+// 전역 app 변수 선언
+let app;
+
 // 앱 초기화
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new TimeTetrisApp();
+    app = new TimeTetrisApp();
+    window.app = app;
     
     // 애니메이션 스타일 추가
     const style = document.createElement('style');

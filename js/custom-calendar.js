@@ -703,10 +703,7 @@ class CustomCalendar {
     }
     
     formatTime(date) {
-        return date.toLocaleTimeString(this.options.locale, {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
     }
     
     updateDateDisplay() {

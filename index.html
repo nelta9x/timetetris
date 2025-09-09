@@ -28,7 +28,7 @@
         </div>
         <div class="header-center">
             <div class="status-bar">
-                <span id="scheduleCount">일정: 0개</span>
+                <span id="participantCount">참가자: 0개</span>
                 <span class="separator">|</span>
                 <span id="sessionCount">세션: 0개</span>
                 <span class="separator">|</span>
@@ -56,9 +56,9 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <nav class="sidebar-nav">
-                <button class="nav-item active" data-view="schedules">
-                    <i class="fas fa-calendar-check"></i>
-                    <span>일정 관리</span>
+                <button class="nav-item active" data-view="participants">
+                    <i class="fas fa-users"></i>
+                    <span>참가자 관리</span>
                 </button>
                 <button class="nav-item" data-view="sessions">
                     <i class="fas fa-clock"></i>
@@ -77,20 +77,20 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Schedules View -->
-            <div id="schedulesView" class="view-panel active">
+            <!-- Participants View -->
+            <div id="participantsView" class="view-panel active">
                 <div class="panel-header">
-                    <h2>일정 관리</h2>
-                    <button class="btn btn-primary" onclick="app.showScheduleModal()">
-                        <i class="fas fa-plus"></i> 새 일정 추가
+                    <h2>참가자 관리</h2>
+                    <button class="btn btn-primary" onclick="app.showParticipantModal()">
+                        <i class="fas fa-plus"></i> 새 참가자 추가
                     </button>
                 </div>
                 <div class="panel-body">
                     <div class="search-bar">
-                        <input type="text" id="scheduleSearch" placeholder="일정 검색..." class="search-input">
+                        <input type="text" id="participantSearch" placeholder="참가자 검색..." class="search-input">
                     </div>
-                    <div id="schedulesList" class="items-list">
-                        <!-- 일정 목록이 여기 표시됩니다 -->
+                    <div id="participantsList" class="items-list">
+                        <!-- 참가자 목록이 여기 표시됩니다 -->
                     </div>
                 </div>
             </div>
@@ -124,15 +124,15 @@
                 <div class="panel-body">
                     <div class="assignment-stats">
                         <div class="stat-card">
-                            <div class="stat-value" id="totalSchedules">0</div>
-                            <div class="stat-label">전체 일정</div>
+                            <div class="stat-value" id="totalParticipants">0</div>
+                            <div class="stat-label">전체 참가자</div>
                         </div>
                         <div class="stat-card success">
-                            <div class="stat-value" id="assignedSchedules">0</div>
+                            <div class="stat-value" id="assignedParticipants">0</div>
                             <div class="stat-label">배치 완료</div>
                         </div>
                         <div class="stat-card warning">
-                            <div class="stat-value" id="unassignedSchedules">0</div>
+                            <div class="stat-value" id="unassignedParticipants">0</div>
                             <div class="stat-label">미배치</div>
                         </div>
                         <div class="stat-card info">
@@ -194,28 +194,28 @@
         </main>
     </div>
 
-    <!-- Schedule Modal -->
-    <div id="scheduleModal" class="modal">
+    <!-- Participant Modal -->
+    <div id="participantModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>일정 추가/편집</h3>
-                <button class="modal-close" onclick="app.closeScheduleModal()">
+                <h3>참가자 추가/편집</h3>
+                <button class="modal-close" onclick="app.closeParticipantModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="scheduleForm">
+                <form id="participantForm">
                     <div class="form-group">
-                        <label for="scheduleName">일정 이름 *</label>
-                        <input type="text" id="scheduleName" required placeholder="예: 김철수 학생">
+                        <label for="participantName">참가자 이름 *</label>
+                        <input type="text" id="participantName" required placeholder="예: 김철수 학생">
                     </div>
                     <div class="form-group">
-                        <label for="scheduleNote">메모</label>
-                        <textarea id="scheduleNote" rows="3" placeholder="추가 정보를 입력하세요"></textarea>
+                        <label for="participantNote">메모</label>
+                        <textarea id="participantNote" rows="3" placeholder="추가 정보를 입력하세요"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="schedulePriority">우선순위</label>
-                        <input type="number" id="schedulePriority" min="1" max="10" value="1">
+                        <label for="participantPriority">우선순위</label>
+                        <input type="number" id="participantPriority" min="1" max="10" value="1">
                     </div>
                     <div class="form-group">
                         <label>가능한 시간대</label>
@@ -243,8 +243,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="app.closeScheduleModal()">취소</button>
-                <button class="btn btn-primary" onclick="app.saveSchedule()">저장</button>
+                <button class="btn btn-secondary" onclick="app.closeParticipantModal()">취소</button>
+                <button class="btn btn-primary" onclick="app.saveParticipant()">저장</button>
             </div>
         </div>
     </div>
@@ -292,7 +292,7 @@
 
     <!-- Scripts -->
     <!-- 모델 클래스들 (의존성 순서대로 로드) -->
-    <script src="js/schedule.js"></script>
+    <script src="js/participant.js"></script>
     <script src="js/session.js"></script>
     <script src="js/data-store.js"></script>
     <!-- 애플리케이션 로직 -->

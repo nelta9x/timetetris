@@ -2,18 +2,18 @@
  * DataStore 클래스
  * 
  * 애플리케이션의 모든 데이터를 관리하는 중앙 저장소입니다.
- * Schedule과 Session 객체들을 저장, 관리하며 로컬스토리지와의 동기화를 담당합니다.
+ * Participant와 Session 객체들을 저장, 관리하며 로컬스토리지와의 동기화를 담당합니다.
  * 
  * 주요 책임:
- * - Schedule과 Session 객체들의 CRUD 작업
+ * - Participant와 Session 객체들의 CRUD 작업
  * - 데이터의 영속성 관리 (로컬스토리지 저장/로드)
- * - 데이터 간의 관계 관리 (일정-세션 배치 관계)
+ * - 데이터 간의 관계 관리 (참가자-세션 배치 관계)
  * - 데이터 통계 및 분석 기능 제공
  * - 데이터 가져오기/내보내기 기능
  * - 배치 관련 작업 (배치 초기화 등)
  * 
  * 데이터 구조:
- * - schedules: Map<string, Schedule> - 모든 일정 객체
+ * - participants: Map<string, Participant> - 모든 참가자 객체
  * - sessions: Map<string, Session> - 모든 세션 객체
  */
 class DataStore {
@@ -22,8 +22,8 @@ class DataStore {
      * 내부 데이터 구조를 초기화하고 로컬스토리지에서 데이터를 로드합니다.
      */
     constructor() {
-        /** @type {Map<string, Schedule>} 일정 객체들을 저장하는 Map */
-        this.schedules = new Map();
+        /** @type {Map<string, Participant>} 참가자 객체들을 저장하는 Map */
+        this.participants = new Map();
         
         /** @type {Map<string, Session>} 세션 객체들을 저장하는 Map */
         this.sessions = new Map();
@@ -33,47 +33,47 @@ class DataStore {
     }
 
     // ========================
-    // Schedule 관련 메서드들
+    // Participant 관련 메서드들
     // ========================
 
     /**
-     * 새로운 일정 추가
-     * @param {Schedule} schedule - 추가할 일정 객체
-     * @returns {Schedule} 추가된 일정 객체
+     * 새로운 참가자 추가
+     * @param {Participant} participant - 추가할 참가자 객체
+     * @returns {Participant} 추가된 참가자 객체
      */
-    addSchedule(schedule) {
-        this.schedules.set(schedule.id, schedule);
+    addParticipant(participant) {
+        this.participants.set(participant.id, participant);
         this.saveToLocalStorage();
-        return schedule;
+        return participant;
     }
 
     /**
-     * 기존 일정 업데이트
-     * @param {string} id - 업데이트할 일정의 ID
+     * 기존 참가자 업데이트
+     * @param {string} id - 업데이트할 참가자의 ID
      * @param {Object} data - 업데이트할 데이터
-     * @returns {Schedule|null} 업데이트된 일정 객체 또는 null
+     * @returns {Participant|null} 업데이트된 참가자 객체 또는 null
      */
-    updateSchedule(id, data) {
-        const schedule = this.schedules.get(id);
-        if (schedule) {
-            Object.assign(schedule, data);
+    updateParticipant(id, data) {
+        const participant = this.participants.get(id);
+        if (participant) {
+            Object.assign(participant, data);
             this.saveToLocalStorage();
-            return schedule;
+            return participant;
         }
         return null;
     }
 
     /**
-     * 일정 삭제
-     * @param {string} id - 삭제할 일정의 ID
+     * 참가자 삭제
+     * @param {string} id - 삭제할 참가자의 ID
      * @returns {boolean} 삭제 성공 여부
      */
-    deleteSchedule(id) {
-        const deleted = this.schedules.delete(id);
+    deleteParticipant(id) {
+        const deleted = this.participants.delete(id);
         if (deleted) {
-            // 관련 세션에서도 해당 일정 제거
+            // 관련 세션에서도 해당 참가자 제거
             this.sessions.forEach(session => {
-                session.removeSchedule(id);
+                session.removeParticipant(id);
             });
             this.saveToLocalStorage();
         }
@@ -81,20 +81,20 @@ class DataStore {
     }
 
     /**
-     * ID로 일정 조회
-     * @param {string} id - 조회할 일정의 ID
-     * @returns {Schedule|undefined} 일정 객체 또는 undefined
+     * ID로 참가자 조회
+     * @param {string} id - 조회할 참가자의 ID
+     * @returns {Participant|undefined} 참가자 객체 또는 undefined
      */
-    getSchedule(id) {
-        return this.schedules.get(id);
+    getParticipant(id) {
+        return this.participants.get(id);
     }
 
     /**
-     * 모든 일정 조회
-     * @returns {Schedule[]} 모든 일정 객체 배열
+     * 모든 참가자 조회
+     * @returns {Participant[]} 모든 참가자 객체 배열
      */
-    getAllSchedules() {
-        return Array.from(this.schedules.values());
+    getAllParticipants() {
+        return Array.from(this.participants.values());
     }
 
     // ========================
@@ -140,11 +140,11 @@ class DataStore {
     deleteSession(id) {
         const session = this.sessions.get(id);
         if (session) {
-            // 배치된 일정들의 배치 상태 초기화
-            session.assignedSchedules.forEach(scheduleId => {
-                const schedule = this.schedules.get(scheduleId);
-                if (schedule) {
-                    schedule.assignedSession = null;
+            // 배치된 참가자들의 배치 상태 초기화
+            session.assignedParticipants.forEach(participantId => {
+                const participant = this.participants.get(participantId);
+                if (participant) {
+                    participant.assignedSession = null;
                 }
             });
             this.sessions.delete(id);
@@ -180,11 +180,11 @@ class DataStore {
      * 모든 일정의 배치 상태를 해제하고 모든 세션을 비웁니다.
      */
     clearAllAssignments() {
-        this.schedules.forEach(schedule => {
-            schedule.assignedSession = null;
+        this.participants.forEach(participant => {
+            participant.assignedSession = null;
         });
         this.sessions.forEach(session => {
-            session.assignedSchedules = [];
+            session.assignedParticipants = [];
         });
         this.saveToLocalStorage();
     }
@@ -198,7 +198,7 @@ class DataStore {
      */
     saveToLocalStorage() {
         const data = {
-            schedules: this.getAllSchedules().map(s => s.toJSON()),
+            participants: this.getAllParticipants().map(p => p.toJSON()),
             sessions: this.getAllSessions().map(s => s.toJSON()),
             lastSaved: new Date().toISOString()
         };
@@ -214,11 +214,17 @@ class DataStore {
             try {
                 const data = JSON.parse(dataStr);
                 
-                // 일정 데이터 로드
-                if (data.schedules && Array.isArray(data.schedules)) {
+                // 참가자 데이터 로드
+                if (data.participants && Array.isArray(data.participants)) {
+                    data.participants.forEach(participantData => {
+                        const participant = new Participant(participantData);
+                        this.participants.set(participant.id, participant);
+                    });
+                } else if (data.schedules && Array.isArray(data.schedules)) {
+                    // 하위 호환성을 위해 기존 schedules 데이터도 처리
                     data.schedules.forEach(scheduleData => {
-                        const schedule = new Schedule(scheduleData);
-                        this.schedules.set(schedule.id, schedule);
+                        const participant = new Participant(scheduleData);
+                        this.participants.set(participant.id, participant);
                     });
                 }
                 
@@ -245,7 +251,7 @@ class DataStore {
      */
     exportData() {
         return {
-            schedules: this.getAllSchedules().map(s => s.toJSON()),
+            participants: this.getAllParticipants().map(p => p.toJSON()),
             sessions: this.getAllSessions().map(s => s.toJSON()),
             exportDate: new Date().toISOString()
         };
@@ -259,14 +265,20 @@ class DataStore {
     importData(data) {
         try {
             // 기존 데이터 초기화
-            this.schedules.clear();
+            this.participants.clear();
             this.sessions.clear();
 
-            // 일정 데이터 가져오기
-            if (data.schedules && Array.isArray(data.schedules)) {
+            // 참가자 데이터 가져오기
+            if (data.participants && Array.isArray(data.participants)) {
+                data.participants.forEach(participantData => {
+                    const participant = new Participant(participantData);
+                    this.participants.set(participant.id, participant);
+                });
+            } else if (data.schedules && Array.isArray(data.schedules)) {
+                // 하위 호환성을 위해 기존 schedules 데이터도 처리
                 data.schedules.forEach(scheduleData => {
-                    const schedule = new Schedule(scheduleData);
-                    this.schedules.set(schedule.id, schedule);
+                    const participant = new Participant(scheduleData);
+                    this.participants.set(participant.id, participant);
                 });
             }
 
@@ -290,7 +302,7 @@ class DataStore {
      * 모든 데이터 삭제
      */
     clearAll() {
-        this.schedules.clear();
+        this.participants.clear();
         this.sessions.clear();
         this.saveToLocalStorage();
     }
@@ -304,27 +316,27 @@ class DataStore {
      * @returns {Object} 통계 정보 객체
      */
     getStatistics() {
-        const totalSchedules = this.schedules.size;
+        const totalParticipants = this.participants.size;
         const totalSessions = this.sessions.size;
-        const assignedSchedules = Array.from(this.schedules.values()).filter(s => s.assignedSession).length;
-        const unassignedSchedules = totalSchedules - assignedSchedules;
-        const utilizationRate = totalSchedules > 0 ? Math.round((assignedSchedules / totalSchedules) * 100) : 0;
+        const assignedParticipants = Array.from(this.participants.values()).filter(p => p.assignedSession).length;
+        const unassignedParticipants = totalParticipants - assignedParticipants;
+        const utilizationRate = totalParticipants > 0 ? Math.round((assignedParticipants / totalParticipants) * 100) : 0;
 
         return {
-            totalSchedules,
+            totalParticipants,
             totalSessions,
-            assignedSchedules,
-            unassignedSchedules,
+            assignedParticipants,
+            unassignedParticipants,
             utilizationRate
         };
     }
 
     /**
-     * 배치되지 않은 일정들 조회
-     * @returns {Schedule[]} 배치되지 않은 일정 배열
+     * 배치되지 않은 참가자들 조회
+     * @returns {Participant[]} 배치되지 않은 참가자 배열
      */
-    getUnassignedSchedules() {
-        return Array.from(this.schedules.values()).filter(schedule => !schedule.isAssigned());
+    getUnassignedParticipants() {
+        return Array.from(this.participants.values()).filter(participant => !participant.isAssigned());
     }
 
     /**
