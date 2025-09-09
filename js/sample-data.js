@@ -339,6 +339,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const loadExample = confirm('TimeTetris에 오신 것을 환영합니다!\n\n예시 데이터를 로드하여 기능을 체험해보시겠습니까?');
             if (loadExample) {
                 loadSampleData();
+                        // 데이터 로딩 후 뷰 업데이트
+                        if (window.app) {
+                            setTimeout(() => {
+                                window.app.updateAllViews();
+                                // 캘린더 뷰가 활성화되어 있으면 새로 초기화
+                                if (window.app.currentView === 'calendar') {
+                                    window.app.initializeCalendarView();
+                                }
+                            }, 200);
+                        }
             }
         }
     }, 500);

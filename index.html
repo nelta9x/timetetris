@@ -11,8 +11,8 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- FullCalendar CSS -->
-    <link href='https://unpkg.com/fullcalendar@6.1.15/index.global.min.css' rel='stylesheet' />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
@@ -154,13 +154,41 @@
                 <div class="panel-header">
                     <h2>캘린더 뷰</h2>
                     <div class="calendar-controls">
-                        <button class="btn btn-sm" onclick="app.changeCalendarView('dayGridMonth')">월</button>
-                        <button class="btn btn-sm" onclick="app.changeCalendarView('timeGridWeek')">주</button>
-                        <button class="btn btn-sm" onclick="app.changeCalendarView('timeGridDay')">일</button>
+                        <!-- 뷰 전환 버튼 -->
+                        <div class="view-switcher">
+                            <button class="btn btn-sm" data-view="month" onclick="app.switchCalendarView('month')">
+                                <i data-lucide="calendar"></i> 월간
+                            </button>
+                            <button class="btn btn-sm active" data-view="week" onclick="app.switchCalendarView('week')">
+                                <i data-lucide="calendar-days"></i> 주간
+                            </button>
+                            <button class="btn btn-sm" data-view="day" onclick="app.switchCalendarView('day')">
+                                <i data-lucide="calendar-clock"></i> 일간
+                            </button>
+                        </div>
+                        
+                        <!-- 날짜 네비게이션 -->
+                        <div class="date-navigation">
+                            <button class="btn btn-icon" onclick="app.navigateCalendar('prev')">
+                                <i data-lucide="chevron-left"></i>
+                            </button>
+                            <button class="btn btn-sm" onclick="app.navigateCalendar('today')">오늘</button>
+                            <button class="btn btn-icon" onclick="app.navigateCalendar('next')">
+                                <i data-lucide="chevron-right"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- 현재 날짜 표시 -->
+                        <div class="current-date-display">
+                            <span id="calendarCurrentDate">2024년 1월</span>
+                        </div>
                     </div>
                 </div>
                 <div class="panel-body">
-                    <div id="calendar"></div>
+                    <!-- 커스텀 캘린더 컨테이너 -->
+                    <div id="customCalendar" class="custom-calendar">
+                        <!-- 캘린더 콘텐츠가 JavaScript로 동적 생성됩니다 -->
+                    </div>
                 </div>
             </div>
         </main>
@@ -263,12 +291,12 @@
     <input type="file" id="importFile" accept=".json" style="display: none">
 
     <!-- Scripts -->
-    <script src='https://unpkg.com/fullcalendar@6.1.15/index.global.min.js'></script>
     <!-- 모델 클래스들 (의존성 순서대로 로드) -->
     <script src="js/schedule.js"></script>
     <script src="js/session.js"></script>
     <script src="js/data-store.js"></script>
     <!-- 애플리케이션 로직 -->
+    <script src="js/custom-calendar.js"></script>
     <script src="js/time-tetris-app.js"></script>
     <script src="js/scheduler.js"></script>
     <script src="js/sample-data.js"></script>
