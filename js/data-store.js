@@ -97,6 +97,31 @@ class DataStore {
         return Array.from(this.participants.values());
     }
 
+    /**
+     * 참가자 순서 재정렬
+     * @param {string[]} orderedIds - 새로운 순서의 참가자 ID 배열
+     */
+    reorderParticipants(orderedIds) {
+        // 기존 참가자들을 임시 저장
+        const participantsArray = orderedIds.map(id => this.participants.get(id)).filter(p => p);
+        
+        // 순서대로 다시 저장하기 위해 Map을 새로 생성
+        const newParticipantsMap = new Map();
+        participantsArray.forEach(participant => {
+            newParticipantsMap.set(participant.id, participant);
+        });
+        
+        // 순서에 없는 참가자들도 추가 (혹시 누락된 것들)
+        this.participants.forEach((participant, id) => {
+            if (!newParticipantsMap.has(id)) {
+                newParticipantsMap.set(id, participant);
+            }
+        });
+        
+        this.participants = newParticipantsMap;
+        this.saveToLocalStorage();
+    }
+
     // ========================
     // Session 관련 메서드들
     // ========================

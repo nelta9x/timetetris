@@ -184,8 +184,11 @@ class TimeTetrisApp {
             const hasMoreSlots = availableSlotLabels.length > maxDisplaySlots;
             
             return `
-                <div class="item-card ${isAssigned ? 'assigned' : ''}" data-id="${participant.id}">
+                <div class="item-card ${isAssigned ? 'assigned' : ''}" data-id="${participant.id}" draggable="true">
                     <div class="item-header">
+                        <div class="drag-handle">
+                            <i class="fas fa-grip-vertical"></i>
+                        </div>
                         <div class="item-title">${this.escapeHtml(participant.name)}</div>
                         <div class="item-badge ${isAssigned ? 'success' : 'warning'}">
                             ${isAssigned ? '배치됨' : '미배치'}
@@ -216,6 +219,9 @@ class TimeTetrisApp {
                 </div>
             `;
         }).join('');
+        
+        // 드래그&드롭 이벤트 리스너 추가
+        this.setupParticipantDragAndDrop();
     }
 
     updateSessionsList() {
@@ -541,6 +547,81 @@ class TimeTetrisApp {
 
     removeTimeSlot(button) {
         button.closest('.time-slot').remove();
+    }
+
+    // 참가자 드래그&드롭 설정
+    setupParticipantDragAndDrop() {
+        const container = document.getElementById('participantsList');
+        const cards = container.querySelectorAll('.item-card[draggable="true"]');
+        
+        cards.forEach(card => {
+            card.addEventListener('dragstart', this.handleParticipantDragStart.bind(this));
+            card.addEventListener('dragover', this.handleParticipantDragOver.bind(this));
+            card.addEventListener('drop', this.handleParticipantDrop.bind(this));
+            card.addEventListener('dragend', this.handleParticipantDragEnd.bind(this));
+        });
+    }
+
+    handleParticipantDragStart(e) {
+        e.dataTransfer.setData('text/plain', e.target.dataset.id);
+        e.target.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    handleParticipantDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const container = document.getElementById('participantsList');
+        const draggingCard = container.querySelector('.dragging');
+        const afterElement = this.getDragAfterElement(container, e.clientY);
+        
+        if (afterElement == null) {
+            container.appendChild(draggingCard);
+        } else {
+            container.insertBefore(draggingCard, afterElement);
+        }
+    }
+
+    handleParticipantDrop(e) {
+        e.preventDefault();
+        const draggedId = e.dataTransfer.getData('text/plain');
+        
+        // 새로운 순서 계산 및 저장
+        this.updateParticipantOrder();
+    }
+
+    handleParticipantDragEnd(e) {
+        e.target.classList.remove('dragging');
+        
+        // 모든 드래그 스타일 제거
+        const cards = document.querySelectorAll('.item-card');
+        cards.forEach(card => card.classList.remove('drag-over'));
+    }
+
+    getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.item-card:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    updateParticipantOrder() {
+        const container = document.getElementById('participantsList');
+        const cards = container.querySelectorAll('.item-card');
+        const newOrder = Array.from(cards).map(card => card.dataset.id);
+        
+        // DataStore에 새로운 순서 저장
+        this.dataStore.reorderParticipants(newOrder);
+        this.showNotification('참가자 순서가 변경되었습니다', 'success');
     }
 
     // 세션 관리 메서드

@@ -1172,3 +1172,72 @@ body {
         height: calc(100vh - 300px);
     }
 }
+
+/* 드래그&드롭 스타일 */
+.item-card[draggable="true"] {
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.item-card[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.item-card.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+    z-index: 1000;
+    box-shadow: var(--shadow-lg);
+}
+
+.drag-handle {
+    display: flex;
+    align-items: center;
+    color: var(--text-tertiary);
+    cursor: grab;
+    padding: 4px 8px;
+    margin-right: 8px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.drag-handle:hover {
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.item-header .item-title {
+    flex: 1;
+    margin: 0;
+}
+
+/* 드롭 존 하이라이트 */
+.item-card.drag-over {
+    border-top: 3px solid var(--primary-color);
+    margin-top: 3px;
+}
+
+/* 드래그 중일 때 컨테이너 스타일 */
+#participantsList.dragging-active {
+    min-height: 200px;
+}
+
+/* 드래그 플레이스홀더 */
+.drag-placeholder {
+    height: 2px;
+    background: var(--primary-color);
+    margin: 4px 0;
+    border-radius: 1px;
+    opacity: 0.7;
+}
