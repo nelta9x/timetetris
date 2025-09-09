@@ -306,7 +306,7 @@ class TimeTetrisApp {
                             <i class="fas fa-user-plus"></i> 참가자 배치
                         </button>
                         <button class="btn btn-sm btn-success" onclick="app.autoAssignToSession('${session.id}')">
-                            <i class="fas fa-magic"></i> 자동 배치
+                            <i class="fas fa-magic"></i> 이 세션에 자동 배치
                         </button>
                     </div>
                 </div>
@@ -653,18 +653,26 @@ class TimeTetrisApp {
         const modal = document.getElementById('participantModal');
         const form = document.getElementById('participantForm');
         
-        form.reset();
+        // 폼이 존재하는 경우에만 reset 호출
+        if (form) {
+            form.reset();
+        }
         
         if (participantId) {
             const participant = this.dataStore.getParticipant(participantId);
             if (participant) {
-                document.getElementById('participantName').value = participant.name;
-                document.getElementById('participantNote').value = participant.note || '';
-                document.getElementById('participantPriority').value = participant.priority;
+                const nameInput = document.getElementById('participantName');
+                const noteInput = document.getElementById('participantNote');
+                const priorityInput = document.getElementById('participantPriority');
+                
+                if (nameInput) nameInput.value = participant.name;
+                if (noteInput) noteInput.value = participant.note || '';
+                if (priorityInput) priorityInput.value = participant.priority;
                 
                 // 시간 슬롯 표시
                 const slotsContainer = document.getElementById('availableSlots');
-                slotsContainer.innerHTML = participant.availableSlots.map((slot, index) => {
+                if (slotsContainer) {
+                    slotsContainer.innerHTML = participant.availableSlots.map((slot, index) => {
                     const startDate = new Date(slot.datetime);
                     const endDate = new Date(startDate.getTime() + slot.duration * 60000);
                     
@@ -685,17 +693,19 @@ class TimeTetrisApp {
                             </button>
                         </div>
                     `;
-                }).join('');
-                
-                if (participant.availableSlots.length === 0) {
-                    this.addTimeSlot();
+                    }).join('');
+                    
+                    if (participant.availableSlots.length === 0) {
+                        this.addTimeSlot();
+                    }
                 }
             }
         } else {
             // 새 참가자의 경우 기본 시간대를 UI에 표시
             const tempParticipant = new Participant();
             const slotsContainer = document.getElementById('availableSlots');
-            slotsContainer.innerHTML = tempParticipant.availableSlots.map((slot, index) => {
+            if (slotsContainer) {
+                slotsContainer.innerHTML = tempParticipant.availableSlots.map((slot, index) => {
                 const startDate = new Date(slot.datetime);
                 const endDate = new Date(startDate.getTime() + slot.duration * 60000);
                 
@@ -716,27 +726,42 @@ class TimeTetrisApp {
                         </button>
                     </div>
                 `;
-            }).join('');
+                }).join('');
+            }
         }
         
-        modal.classList.add('active');
+        if (modal) {
+            modal.classList.add('active');
+        }
     }
 
     closeParticipantModal() {
-        document.getElementById('participantModal').classList.remove('active');
+        const modal = document.getElementById('participantModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
         this.editingParticipantId = null;
     }
 
     saveParticipant() {
         const form = document.getElementById('participantForm');
-        if (!form.checkValidity()) {
-            form.reportValidity();
+        if (!form || !form.checkValidity()) {
+            if (form) form.reportValidity();
             return;
         }
 
-        const name = document.getElementById('participantName').value;
-        const note = document.getElementById('participantNote').value;
-        const priority = parseInt(document.getElementById('participantPriority').value) || 1;
+        const nameInput = document.getElementById('participantName');
+        const noteInput = document.getElementById('participantNote');
+        const priorityInput = document.getElementById('participantPriority');
+        
+        if (!nameInput || !noteInput || !priorityInput) {
+            console.error('Required form elements not found');
+            return;
+        }
+
+        const name = nameInput.value;
+        const note = noteInput.value;
+        const priority = parseInt(priorityInput.value) || 1;
         
         // 시간 슬롯 수집
         const availableSlots = [];
