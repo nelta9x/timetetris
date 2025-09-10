@@ -64,9 +64,7 @@ class TimeTetrisApp {
         this.initializeLanguageSelector();
         
         // i18n DOM 업데이트
-        if (window.i18n) {
-            window.i18n.updateDOM();
-        }
+        window.i18n.updateDOM();
         
         this.showNotification(t('notification.app_loaded'), 'success');
         
@@ -694,11 +692,11 @@ class TimeTetrisApp {
                         <div class="time-slot">
                             <div class="time-slot-inputs">
                                 <div class="time-input-group">
-                                    <label class="time-input-label">시작</label>
+                                    <label class="time-input-label" data-i18n="modal.participant.time_start"></label>
                                     <input type="datetime-local" class="slot-start-datetime" value="${this.toDateTimeLocal(slot.datetime)}">
                                 </div>
                                 <div class="time-input-group">
-                                    <label class="time-input-label">종료</label>
+                                    <label class="time-input-label" data-i18n="modal.participant.time_end"></label>
                                     <input type="datetime-local" class="slot-end-datetime" value="${this.toDateTimeLocal(endDate.toISOString())}">
                                 </div>
                             </div>
@@ -708,6 +706,9 @@ class TimeTetrisApp {
                         </div>
                     `;
                     }).join('');
+                    
+                    // 동적으로 생성된 요소들에 i18n 적용
+                    setTimeout(() => window.i18n.updateDOM(), 0);
                     
                     if (participant.availableSlots.length === 0) {
                         this.addTimeSlot();
@@ -727,11 +728,11 @@ class TimeTetrisApp {
                     <div class="time-slot">
                         <div class="time-slot-inputs">
                             <div class="time-input-group">
-                                <label class="time-input-label">시작</label>
+                                <label class="time-input-label" data-i18n="modal.participant.time_start"></label>
                                 <input type="datetime-local" class="slot-start-datetime" value="${this.toDateTimeLocal(slot.datetime)}">
                             </div>
                             <div class="time-input-group">
-                                <label class="time-input-label">종료</label>
+                                <label class="time-input-label" data-i18n="modal.participant.time_end"></label>
                                 <input type="datetime-local" class="slot-end-datetime" value="${this.toDateTimeLocal(endDate.toISOString())}">
                             </div>
                         </div>
@@ -741,6 +742,8 @@ class TimeTetrisApp {
                     </div>
                 `;
                 }).join('');
+                
+                setTimeout(() => window.i18n.updateDOM(), 0);
             }
         }
         
@@ -850,11 +853,11 @@ class TimeTetrisApp {
         slotDiv.innerHTML = `
             <div class="time-slot-inputs">
                 <div class="time-input-group">
-                    <label class="time-input-label">시작</label>
+                    <label class="time-input-label" data-i18n="modal.participant.time_start"></label>
                     <input type="datetime-local" class="slot-start-datetime">
                 </div>
                 <div class="time-input-group">
-                    <label class="time-input-label">종료</label>
+                    <label class="time-input-label" data-i18n="modal.participant.time_end"></label>
                     <input type="datetime-local" class="slot-end-datetime">
                 </div>
             </div>
@@ -863,6 +866,9 @@ class TimeTetrisApp {
             </button>
         `;
         container.appendChild(slotDiv);
+        
+        // 동적으로 생성된 요소들에 i18n 적용
+        setTimeout(() => window.i18n.updateDOM(), 0);
     }
 
     removeTimeSlot(button) {
@@ -1368,25 +1374,23 @@ class TimeTetrisApp {
      * @param {string} language - 언어 코드
      */
     changeLanguage(language) {
-        if (window.i18n) {
-            window.i18n.setLanguage(language);
-            
-            // DOM 업데이트
-            window.i18n.updateDOM();
-            
-            // 동적 콘텐츠 업데이트
-            this.updateAllViews();
-            
-            // 캘린더 언어 업데이트
-            if (this.calendar) {
-                this.calendar.updateLocale();
-            }
-            
-            // 언어 선택기 업데이트
-            const languageSelect = document.getElementById('languageSelect');
-            if (languageSelect) {
-                languageSelect.value = language;
-            }
+        window.i18n.setLanguage(language);
+        
+        // DOM 업데이트
+        window.i18n.updateDOM();
+        
+        // 동적 콘텐츠 업데이트
+        this.updateAllViews();
+        
+        // 캘린더 언어 업데이트
+        if (this.calendar) {
+            this.calendar.updateLocale();
+        }
+        
+        // 언어 선택기 업데이트
+        const languageSelect = document.getElementById('languageSelect');
+        if (languageSelect) {
+            languageSelect.value = language;
         }
     }
 }

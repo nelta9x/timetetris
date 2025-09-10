@@ -47,20 +47,45 @@ class Session {
      */
     generateDefaultName(timeSlot) {
         if (!timeSlot || !timeSlot.datetime) {
-            return '새 세션';
+            // i18n이 사용 가능한지 확인
+            if (typeof window !== 'undefined' && window.t) {
+                return window.t('sessions.new_session');
+            }
+            return 'New Session';
         }
 
         try {
             const date = new Date(timeSlot.datetime);
-            const dateStr = date.toLocaleDateString('ko-KR');
-            const timeStr = date.toLocaleTimeString('ko-KR', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
             const duration = timeSlot.duration || 60;
-            return `${dateStr} ${timeStr} (${duration}분)`;
+            
+            // i18n이 사용 가능한지 확인
+            if (typeof window !== 'undefined' && window.t) {
+                // 현재 언어에 따라 적절한 로케일로 날짜/시간 포맷팅
+                const currentLang = window.i18n.getCurrentLanguage();
+                const locale = currentLang === 'ko' ? 'ko-KR' : 'en-US';
+                
+                const dateStr = date.toLocaleDateString(locale);
+                const timeStr = date.toLocaleTimeString(locale, {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return window.t('sessions.default_name', dateStr, timeStr, duration);
+            } else {
+                // i18n이 없는 경우 영어를 기본으로 사용
+                const dateStr = date.toLocaleDateString('en-US');
+                const timeStr = date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                return `${dateStr} ${timeStr} (${duration} min)`;
+            }
         } catch (error) {
-            return '새 세션';
+            // 에러 발생 시 기본값 반환
+            if (typeof window !== 'undefined' && window.t) {
+                return window.t('sessions.new_session');
+            }
+            return 'New Session';
         }
     }
 

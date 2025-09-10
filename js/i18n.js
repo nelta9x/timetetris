@@ -10,9 +10,6 @@ class I18n {
         this.currentLanguage = this.detectLanguage();
         this.translations = {};
         this.loadTranslations();
-        
-        // 개발용: 초기 언어 설정 로그
-        console.log(`TimeTetris i18n initialized with language: ${this.currentLanguage}`);
     }
 
     /**
@@ -82,6 +79,8 @@ class I18n {
                 'sessions.deactivate': '비활성화',
                 'sessions.assign_participant': '참가자 배치',
                 'sessions.auto_assign': '이 세션에 자동 배치',
+                'sessions.default_name': '{0} {1} ({2}분)',
+                'sessions.new_session': '새 세션',
 
                 // 캘린더
                 'calendar.title': '캘린더 뷰',
@@ -260,6 +259,8 @@ class I18n {
                 'sessions.deactivate': 'Deactivate',
                 'sessions.assign_participant': 'Assign Participant',
                 'sessions.auto_assign': 'Auto Assign to This Session',
+                'sessions.default_name': '{0} {1} ({2} min)',
+                'sessions.new_session': 'New Session',
 
                 // Calendar
                 'calendar.title': 'Calendar View',
@@ -453,12 +454,7 @@ class I18n {
      * @param {string} lang - 언어 코드
      */
     saveLanguageToStorage(lang) {
-        try {
-            localStorage.setItem('timetetris_language', lang);
-            console.log(`Language saved to localStorage: ${lang}`);
-        } catch (error) {
-            console.warn('Failed to save language to localStorage:', error);
-        }
+        localStorage.setItem('timetetris_language', lang);
     }
 
     /**

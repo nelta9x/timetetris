@@ -668,10 +668,7 @@ class CustomCalendar {
     // ========================
     
     getLocale() {
-        if (window.i18n) {
-            return window.i18n.getCurrentLanguage() === 'ko' ? 'ko-KR' : 'en-US';
-        }
-        return 'ko-KR';
+        return window.i18n.getCurrentLanguage() === 'ko' ? 'ko-KR' : 'en-US';
     }
     
     updateLocale() {
