@@ -19,7 +19,7 @@ class CustomCalendar {
 
         this.options = {
             view: 'week', // 'day', 'week', 'month'
-            locale: 'ko-KR',
+            locale: this.getLocale(),
             onEventClick: null,
             onEventDrop: null,
             onDateChange: null,
@@ -96,11 +96,14 @@ class CustomCalendar {
         // 빈 시간 라벨 칸
         const timeLabel = document.createElement('div');
         timeLabel.className = 'time-label';
-        timeLabel.textContent = '시간';
+        timeLabel.textContent = t('calendar.time_label');
         header.appendChild(timeLabel);
         
         // 요일 헤더들
-        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        const dayNames = [
+            t('calendar.day.sun'), t('calendar.day.mon'), t('calendar.day.tue'), 
+            t('calendar.day.wed'), t('calendar.day.thu'), t('calendar.day.fri'), t('calendar.day.sat')
+        ];
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
@@ -384,7 +387,10 @@ class CustomCalendar {
         container.className = 'calendar-month-view';
         
         // 요일 헤더
-        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        const dayNames = [
+            t('calendar.day.sun'), t('calendar.day.mon'), t('calendar.day.tue'), 
+            t('calendar.day.wed'), t('calendar.day.thu'), t('calendar.day.fri'), t('calendar.day.sat')
+        ];
         dayNames.forEach(day => {
             const header = document.createElement('div');
             header.className = 'month-day-header';
@@ -660,6 +666,19 @@ class CustomCalendar {
     // ========================
     // 유틸리티 메서드
     // ========================
+    
+    getLocale() {
+        if (window.i18n) {
+            return window.i18n.getCurrentLanguage() === 'ko' ? 'ko-KR' : 'en-US';
+        }
+        return 'ko-KR';
+    }
+    
+    updateLocale() {
+        this.options.locale = this.getLocale();
+        this.render();
+        this.updateDateDisplay();
+    }
     
     getWeekStart(date) {
         const d = new Date(date);

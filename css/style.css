@@ -54,6 +54,29 @@ body {
     gap: 12px;
 }
 
+/* Language Selector */
+.language-selector {
+    margin-right: 12px;
+}
+
+.language-select {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    transition: var(--transition);
+}
+
+.language-select:hover,
+.language-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
 .logo {
     display: flex;
     align-items: center;

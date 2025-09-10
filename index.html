@@ -34,16 +34,24 @@
             </div>
         </div>
         <div class="header-right">
-            <button class="btn btn-icon" onclick="app.exportData()" title="내보내기">
+            <!-- 언어 선택 -->
+            <div class="language-selector">
+                <select id="languageSelect" onchange="app.changeLanguage(this.value)" class="language-select">
+                    <option value="ko">한국어</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-icon" onclick="app.exportData()" data-i18n-title="header.export">
                 <i class="fas fa-download"></i>
             </button>
-            <button class="btn btn-icon" onclick="app.importData()" title="불러오기">
+            <button class="btn btn-icon" onclick="app.importData()" data-i18n-title="header.import">
                 <i class="fas fa-upload"></i>
             </button>
-            <button class="btn btn-icon" onclick="app.clearAll()" title="모두 지우기">
+            <button class="btn btn-icon" onclick="app.clearAll()" data-i18n-title="header.clear">
                 <i class="fas fa-trash"></i>
             </button>
-            <button class="btn btn-icon" onclick="app.showHelp()" title="도움말">
+            <button class="btn btn-icon" onclick="app.showHelp()" data-i18n-title="header.help">
                 <i class="fas fa-question-circle"></i>
             </button>
         </div>
@@ -56,15 +64,15 @@
             <nav class="sidebar-nav">
                 <button class="nav-item active" data-view="participants">
                     <i class="fas fa-users"></i>
-                    <span>참가자 관리</span>
+                    <span data-i18n="nav.participants">참가자 관리</span>
                 </button>
                 <button class="nav-item" data-view="sessions">
                     <i class="fas fa-clock"></i>
-                    <span>세션 관리</span>
+                    <span data-i18n="nav.sessions">세션 관리</span>
                 </button>
                 <button class="nav-item" data-view="calendar">
                     <i class="fas fa-calendar-alt"></i>
-                    <span>캘린더 뷰</span>
+                    <span data-i18n="nav.calendar">캘린더 뷰</span>
                 </button>
             </nav>
         </aside>
@@ -74,17 +82,17 @@
             <!-- Participants View -->
             <div id="participantsView" class="view-panel active">
                 <div class="panel-header">
-                    <h2>참가자 관리</h2>
+                    <h2 data-i18n="participants.title">참가자 관리</h2>
                     <button class="btn btn-primary" onclick="app.showParticipantModal()">
-                        <i class="fas fa-plus"></i> 새 참가자 추가
+                        <i class="fas fa-plus"></i> <span data-i18n="participants.add">새 참가자 추가</span>
                     </button>
                 </div>
                 <div class="panel-body">
                     <div class="search-bar">
-                        <input type="text" id="participantSearch" placeholder="참가자 검색..." class="search-input">
+                        <input type="text" id="participantSearch" data-i18n-placeholder="participants.search" placeholder="참가자 검색..." class="search-input">
                     </div>
                     <div id="participantsList" class="items-list">
-                        <!-- 참가자 목록이 여기 표시됩니다 -->
+                        <!-- Participant list will be displayed here -->
                     </div>
                 </div>
             </div>
@@ -92,19 +100,19 @@
             <!-- Sessions View -->
             <div id="sessionsView" class="view-panel">
             <div class="panel-header">
-                <h2>세션 관리</h2>
+                <h2 data-i18n="sessions.title">세션 관리</h2>
                 <div class="header-actions">
                     <button class="btn btn-primary" onclick="app.showSessionModal()">
-                        <i class="fas fa-plus"></i> 새 세션 추가
+                        <i class="fas fa-plus"></i> <span data-i18n="sessions.add">새 세션 추가</span>
                     </button>
                     <button class="btn btn-success" onclick="app.autoAssignAll()">
-                        <i class="fas fa-magic"></i> 전체 자동 배치
+                        <i class="fas fa-magic"></i> <span data-i18n="sessions.auto_assign_all">전체 자동 배치</span>
                     </button>
                 </div>
             </div>
                 <div class="panel-body">
                     <div id="sessionsList" class="items-list">
-                        <!-- 세션 목록이 여기 표시됩니다 -->
+                        <!-- Session list will be displayed here -->
                     </div>
                 </div>
             </div>
@@ -113,42 +121,42 @@
             <!-- Calendar View -->
             <div id="calendarView" class="view-panel">
                 <div class="panel-header">
-                    <h2>캘린더 뷰</h2>
+                    <h2 data-i18n="calendar.title">캘린더 뷰</h2>
                     <div class="calendar-controls">
-                        <!-- 뷰 전환 버튼 -->
+                        <!-- View switch buttons -->
                         <div class="view-switcher">
                             <button class="btn btn-sm" data-view="month" onclick="app.switchCalendarView('month')">
-                                <i data-lucide="calendar"></i> 월간
+                                <i data-lucide="calendar"></i> <span data-i18n="calendar.month">월간</span>
                             </button>
                             <button class="btn btn-sm active" data-view="week" onclick="app.switchCalendarView('week')">
-                                <i data-lucide="calendar-days"></i> 주간
+                                <i data-lucide="calendar-days"></i> <span data-i18n="calendar.week">주간</span>
                             </button>
                             <button class="btn btn-sm" data-view="day" onclick="app.switchCalendarView('day')">
-                                <i data-lucide="calendar-clock"></i> 일간
+                                <i data-lucide="calendar-clock"></i> <span data-i18n="calendar.day">일간</span>
                             </button>
                         </div>
                         
-                        <!-- 날짜 네비게이션 -->
+                        <!-- Date navigation -->
                         <div class="date-navigation">
                             <button class="btn btn-icon" onclick="app.navigateCalendar('prev')">
                                 <i data-lucide="chevron-left"></i>
                             </button>
-                            <button class="btn btn-sm" onclick="app.navigateCalendar('today')">오늘</button>
+                            <button class="btn btn-sm" onclick="app.navigateCalendar('today')" data-i18n="calendar.today">오늘</button>
                             <button class="btn btn-icon" onclick="app.navigateCalendar('next')">
                                 <i data-lucide="chevron-right"></i>
                             </button>
                         </div>
                         
-                        <!-- 현재 날짜 표시 -->
+                        <!-- Current date display -->
                         <div class="current-date-display">
-                            <span id="calendarCurrentDate">2024년 1월</span>
+                            <span id="calendarCurrentDate" data-i18n="calendar.current_date" data-i18n-args="2024,1">2024년 1월</span>
                         </div>
                     </div>
                 </div>
                 <div class="panel-body">
-                    <!-- 커스텀 캘린더 컨테이너 -->
+                    <!-- Custom calendar container -->
                     <div id="customCalendar" class="custom-calendar">
-                        <!-- 캘린더 콘텐츠가 JavaScript로 동적 생성됩니다 -->
+                        <!-- Calendar content will be dynamically generated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -159,7 +167,7 @@
     <div id="participantModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>참가자 추가/편집</h3>
+                <h3 data-i18n="modal.participant.title">참가자 추가/편집</h3>
                 <button class="modal-close" onclick="app.closeParticipantModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -167,28 +175,28 @@
             <div class="modal-body">
                 <form id="participantForm">
                     <div class="form-group">
-                        <label for="participantName">참가자 이름 *</label>
-                        <input type="text" id="participantName" required placeholder="예: 김철수 학생">
+                        <label for="participantName"><span data-i18n="modal.participant.name">참가자 이름</span> <span data-i18n="common.required">*</span></label>
+                        <input type="text" id="participantName" required data-i18n-placeholder="modal.participant.name_placeholder" placeholder="예: 김철수 학생">
                     </div>
                     <div class="form-group">
-                        <label for="participantNote">메모</label>
-                        <textarea id="participantNote" rows="3" placeholder="추가 정보를 입력하세요"></textarea>
+                        <label for="participantNote" data-i18n="modal.participant.note">메모</label>
+                        <textarea id="participantNote" rows="3" data-i18n-placeholder="modal.participant.note_placeholder" placeholder="추가 정보를 입력하세요"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="participantPriority">우선순위</label>
+                        <label for="participantPriority" data-i18n="modal.participant.priority">우선순위</label>
                         <input type="number" id="participantPriority" min="1" max="10" value="1">
                     </div>
                     <div class="form-group">
-                        <label>가능한 시간대</label>
+                        <label data-i18n="modal.participant.available_times">가능한 시간대</label>
                         <div id="availableSlots" class="time-slots">
                             <div class="time-slot">
                                 <div class="time-slot-inputs">
                                     <div class="time-input-group">
-                                        <label class="time-input-label">시작</label>
+                                        <label class="time-input-label" data-i18n="modal.participant.time_start">시작</label>
                                         <input type="datetime-local" class="slot-start-datetime">
                                     </div>
                                     <div class="time-input-group">
-                                        <label class="time-input-label">종료</label>
+                                        <label class="time-input-label" data-i18n="modal.participant.time_end">종료</label>
                                         <input type="datetime-local" class="slot-end-datetime">
                                     </div>
                                 </div>
@@ -198,14 +206,14 @@
                             </div>
                         </div>
                         <button type="button" class="btn btn-sm btn-secondary" onclick="app.addTimeSlot()">
-                            <i class="fas fa-plus"></i> 시간대 추가
+                            <i class="fas fa-plus"></i> <span data-i18n="modal.participant.add_time">시간대 추가</span>
                         </button>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="app.closeParticipantModal()">취소</button>
-                <button class="btn btn-primary" onclick="app.saveParticipant()">저장</button>
+                <button class="btn btn-secondary" onclick="app.closeParticipantModal()" data-i18n="modal.participant.cancel">취소</button>
+                <button class="btn btn-primary" onclick="app.saveParticipant()" data-i18n="modal.participant.save">저장</button>
             </div>
         </div>
     </div>
@@ -214,7 +222,7 @@
     <div id="sessionModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>세션 추가/편집</h3>
+                <h3 data-i18n="modal.session.title">세션 추가/편집</h3>
                 <button class="modal-close" onclick="app.closeSessionModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -222,34 +230,34 @@
             <div class="modal-body">
                 <form id="sessionForm">
                     <div class="form-group">
-                        <label for="sessionName">세션 이름</label>
-                        <input type="text" id="sessionName" placeholder="자동 생성됨">
+                        <label for="sessionName" data-i18n="modal.session.name">세션 이름</label>
+                        <input type="text" id="sessionName" data-i18n-placeholder="modal.session.name_placeholder" placeholder="자동 생성됨">
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>
                                 <input type="checkbox" id="sessionEnabled" checked>
-                                활성화
+                                <span data-i18n="modal.session.active">활성화</span>
                             </label>
                         </div>
                         <div class="form-group">
-                            <label for="sessionCapacity">세션 용량 (명)</label>
+                            <label for="sessionCapacity" data-i18n="modal.session.capacity">세션 용량 (명)</label>
                             <input type="number" id="sessionCapacity" min="1" max="20" value="1" required>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="sessionDateTime">시작 시간 *</label>
+                        <label for="sessionDateTime"><span data-i18n="modal.session.start_time">시작 시간</span> <span data-i18n="common.required">*</span></label>
                         <input type="datetime-local" id="sessionDateTime" required>
                     </div>
                     <div class="form-group">
-                        <label for="sessionDuration">지속 시간 (분) *</label>
+                        <label for="sessionDuration"><span data-i18n="modal.session.duration">지속 시간 (분)</span> <span data-i18n="common.required">*</span></label>
                         <input type="number" id="sessionDuration" min="10" max="480" value="60" required>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="app.closeSessionModal()">취소</button>
-                <button class="btn btn-primary" onclick="app.saveSession()">저장</button>
+                <button class="btn btn-secondary" onclick="app.closeSessionModal()" data-i18n="modal.session.cancel">취소</button>
+                <button class="btn btn-primary" onclick="app.saveSession()" data-i18n="modal.session.save">저장</button>
             </div>
         </div>
     </div>
@@ -258,6 +266,8 @@
     <input type="file" id="importFile" accept=".json" style="display: none">
 
     <!-- Scripts -->
+    <!-- i18n 시스템 먼저 로드 -->
+    <script src="js/i18n.js"></script>
     <!-- 모델 클래스들 (의존성 순서대로 로드) -->
     <script src="js/participant.js"></script>
     <script src="js/session.js"></script>

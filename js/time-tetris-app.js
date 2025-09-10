@@ -53,7 +53,16 @@ class TimeTetrisApp {
     init() {
         this.setupEventListeners();
         this.updateAllViews();
-        this.showNotification('앱이 성공적으로 로드되었습니다', 'success');
+        
+        // 언어 선택기 초기화
+        this.initializeLanguageSelector();
+        
+        // i18n DOM 업데이트
+        if (window.i18n) {
+            window.i18n.updateDOM();
+        }
+        
+        this.showNotification(t('notification.app_loaded'), 'success');
         
         // Lucide 아이콘 초기화
         if (window.lucide) {
@@ -131,8 +140,8 @@ class TimeTetrisApp {
 
     updateHeader() {
         const stats = this.dataStore.getStatistics();
-        document.getElementById('participantCount').textContent = `참가자: ${stats.totalParticipants} (세션에 배치: ${stats.assignedParticipants})`;
-        document.getElementById('sessionCount').textContent = `세션: ${stats.totalSessions}`;
+        document.getElementById('participantCount').textContent = t('stats.participants', stats.totalParticipants, stats.assignedParticipants);
+        document.getElementById('sessionCount').textContent = t('stats.sessions', stats.totalSessions);
     }
 
     updateParticipantsList() {
@@ -143,8 +152,8 @@ class TimeTetrisApp {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-user-plus"></i>
-                    <h3>참가자가 없습니다</h3>
-                    <p>새 참가자를 추가하여 시작하세요</p>
+                    <h3>${t('participants.empty.title')}</h3>
+                    <p>${t('participants.empty.description')}</p>
                 </div>
             `;
             return;
@@ -189,13 +198,13 @@ class TimeTetrisApp {
                         </div>
                         <div class="item-title">${this.escapeHtml(participant.name)}</div>
                         <div class="item-badge ${isAssigned ? 'success' : 'warning'}">
-                            ${isAssigned ? '배치됨' : '미배치'}
+                            ${isAssigned ? t('participants.status.assigned') : t('participants.status.unassigned')}
                         </div>
                     </div>
                     ${participant.note ? `<div class="item-note">${this.escapeHtml(participant.note)}</div>` : ''}
                     <div class="item-meta">
-                        <span><i class="fas fa-star"></i> 우선순위: ${participant.priority}</span>
-                        <span><i class="fas fa-clock"></i> 가능 시간: ${availableSlots.length}개</span>
+                        <span><i class="fas fa-star"></i> ${t('participants.priority', participant.priority)}</span>
+                        <span><i class="fas fa-clock"></i> ${t('participants.available_times', availableSlots.length)}</span>
                         ${session ? `<span><i class="fas fa-link"></i> ${this.escapeHtml(session.name)}</span>` : ''}
                     </div>
                     ${availableSlots.length > 0 ? `
@@ -208,10 +217,10 @@ class TimeTetrisApp {
                     ` : ''}
                     <div class="item-actions">
                         <button class="btn btn-sm btn-secondary" onclick="app.editParticipant('${participant.id}')">
-                            <i class="fas fa-edit"></i> 편집
+                            <i class="fas fa-edit"></i> ${t('participants.edit')}
                         </button>
                         <button class="btn btn-sm btn-danger" onclick="app.deleteParticipant('${participant.id}')">
-                            <i class="fas fa-trash"></i> 삭제
+                            <i class="fas fa-trash"></i> ${t('participants.delete')}
                         </button>
                     </div>
                 </div>
@@ -230,8 +239,8 @@ class TimeTetrisApp {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-clock"></i>
-                    <h3>세션이 없습니다</h3>
-                    <p>새 세션을 추가하여 시작하세요</p>
+                    <h3>${t('sessions.empty.title')}</h3>
+                    <p>${t('sessions.empty.description')}</p>
                 </div>
             `;
             return;
@@ -251,17 +260,17 @@ class TimeTetrisApp {
                     <div class="item-header">
                         <div class="item-title">${this.escapeHtml(session.name)}</div>
                         <div class="item-badge ${session.enabled ? 'success' : 'danger'}">
-                            ${session.enabled ? '활성' : '비활성'}
+                            ${session.enabled ? t('sessions.status.active') : t('sessions.status.inactive')}
                         </div>
                     </div>
                     <div class="item-meta">
                         <span><i class="fas fa-calendar"></i> ${this.formatDate(datetime)}</span>
                         <span><i class="fas fa-clock"></i> ${this.formatTime(datetime)} - ${this.formatTime(endTime)}</span>
-                        <span><i class="fas fa-hourglass"></i> ${session.timeSlot.duration}분</span>
+                        <span><i class="fas fa-hourglass"></i> ${t('sessions.duration', session.timeSlot.duration)}</span>
                     </div>
                     <div class="item-meta">
-                        <span><i class="fas fa-users"></i> 배치 현황: ${assignedIds.length}/${session.capacity || 1}명</span>
-                        ${assignedIds.length >= (session.capacity || 1) ? '<span class="item-badge warning">정원 초과</span>' : ''}
+                        <span><i class="fas fa-users"></i> ${t('sessions.capacity', assignedIds.length, session.capacity || 1)}</span>
+                        ${assignedIds.length >= (session.capacity || 1) ? `<span class="item-badge warning">${t('sessions.capacity_exceeded')}</span>` : ''}
                     </div>
                     
                     <!-- 배치된 참가자 카드 영역 -->
@@ -284,28 +293,28 @@ class TimeTetrisApp {
                             </div>
                         ` : `
                             <div class="empty-participants">
-                                <small>배치된 참가자가 없습니다</small>
+                                <small>${t('sessions.no_participants')}</small>
                             </div>
                         `}
                     </div>
                     
                     <div class="item-actions">
                         <button class="btn btn-sm btn-secondary" onclick="app.editSession('${session.id}')">
-                            <i class="fas fa-edit"></i> 편집
+                            <i class="fas fa-edit"></i> ${t('sessions.edit')}
                         </button>
                         <button class="btn btn-sm btn-danger" onclick="app.deleteSession('${session.id}')">
-                            <i class="fas fa-trash"></i> 삭제
+                            <i class="fas fa-trash"></i> ${t('sessions.delete')}
                         </button>
                         <button class="btn btn-sm ${session.enabled ? 'btn-warning' : 'btn-success'}" 
                                 onclick="app.toggleSession('${session.id}')">
                             <i class="fas fa-${session.enabled ? 'pause' : 'play'}"></i> 
-                            ${session.enabled ? '비활성화' : '활성화'}
+                            ${session.enabled ? t('sessions.deactivate') : t('sessions.activate')}
                         </button>
                         <button class="btn btn-sm btn-primary" onclick="app.showAssignParticipantModal('${session.id}')">
-                            <i class="fas fa-user-plus"></i> 참가자 배치
+                            <i class="fas fa-user-plus"></i> ${t('sessions.assign_participant')}
                         </button>
                         <button class="btn btn-sm btn-success" onclick="app.autoAssignToSession('${session.id}')">
-                            <i class="fas fa-magic"></i> 이 세션에 자동 배치
+                            <i class="fas fa-magic"></i> ${t('sessions.auto_assign')}
                         </button>
                     </div>
                 </div>
@@ -342,32 +351,32 @@ class TimeTetrisApp {
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>참가자 배치 - ${this.escapeHtml(session.name)}</h3>
+                    <h3>${t('modal.assign.title', this.escapeHtml(session.name))}</h3>
                     <button class="close-btn" onclick="this.closest('.modal').remove()">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <div class="modal-body">
                     ${availableParticipants.length > 0 ? `
-                        <p>배치 가능한 참가자 목록:</p>
+                        <p>${t('modal.assign.available_participants')}</p>
                         <div class="participant-selection-list">
                             ${availableParticipants.map(p => `
                                 <div class="participant-selection-item">
                                     <div class="participant-info">
                                         <i class="fas fa-user"></i>
                                         <span>${this.escapeHtml(p.name)}</span>
-                                        <small>(우선순위: ${p.priority})</small>
+                                        <small>(${t('modal.assign.priority', p.priority)})</small>
                                     </div>
                                     <button class="btn btn-sm btn-primary" 
                                             onclick="app.assignParticipantToSession('${sessionId}', '${p.id}')">
-                                        배치
+                                        ${t('modal.assign.assign_button')}
                                     </button>
                                 </div>
                             `).join('')}
                         </div>
                     ` : `
-                        <p>배치 가능한 참가자가 없습니다.</p>
-                        <small>참가자의 가능 시간이 세션 시간과 겹치지 않거나, 모든 참가자가 이미 배치되었습니다.</small>
+                        <p>${t('modal.assign.no_participants')}</p>
+                        <small>${t('modal.assign.no_participants_detail')}</small>
                     `}
                 </div>
             </div>
@@ -398,7 +407,7 @@ class TimeTetrisApp {
         // participant.assignedSession 제거 - Session이 이미 관리함
         
         this.dataStore.saveToLocalStorage();
-        this.showNotification(`${participant.name}님이 ${session.name}에 배치되었습니다`, 'success');
+        this.showNotification(t('notification.participant_assigned', participant.name, session.name), 'success');
         
         // 모달 닫기
         const modal = document.querySelector('.modal');
@@ -430,7 +439,7 @@ class TimeTetrisApp {
         // participant.assignedSession 제거 - Session이 이미 관리함
         
         this.dataStore.saveToLocalStorage();
-        this.showNotification(`${participant.name}님이 배치 해제되었습니다`, 'info');
+        this.showNotification(t('notification.participant_unassigned', participant.name), 'info');
         this.updateAllViews();
     }
     
@@ -483,7 +492,7 @@ class TimeTetrisApp {
         
         // 이미 배치된 참가자인지 확인
         if (this.dataStore.isParticipantAssigned(participantId)) {
-            this.showNotification(`${participant.name}님은 이미 다른 세션에 배치되어 있습니다`, 'warning');
+            this.showNotification(t('notification.participant_already_assigned', participant.name), 'warning');
             return;
         }
         
@@ -576,10 +585,10 @@ class TimeTetrisApp {
         
         if (assignedCount > 0) {
             this.dataStore.saveToLocalStorage();
-            this.showNotification(`${assignedCount}명의 참가자가 자동 배치되었습니다`, 'success');
+            this.showNotification(t('notification.auto_assign_success', assignedCount), 'success');
             this.updateAllViews();
         } else {
-            this.showNotification('자동 배치할 수 없습니다', 'warning');
+            this.showNotification(t('notification.auto_assign_none'), 'warning');
         }
     }
     
@@ -639,7 +648,7 @@ class TimeTetrisApp {
         
         this.dataStore.saveToLocalStorage();
         this.showNotification(
-            `전체 자동 배치 완료: ${totalAssigned}/${participants.length}명 배치됨`, 
+            t('notification.auto_assign_complete', totalAssigned), 
             totalAssigned > 0 ? 'success' : 'warning'
         );
         this.updateAllViews();
@@ -820,9 +829,9 @@ class TimeTetrisApp {
     }
 
     deleteParticipant(participantId) {
-        if (confirm('정말로 이 참가자를 삭제하시겠습니까?')) {
+        if (confirm(t('common.confirm_delete'))) {
             this.dataStore.deleteParticipant(participantId);
-            this.showNotification('참가자가 삭제되었습니다', 'info');
+            this.showNotification(t('notification.participant_deleted'), 'info');
             this.updateAllViews();
         }
     }
@@ -999,9 +1008,9 @@ class TimeTetrisApp {
     }
 
     deleteSession(sessionId) {
-        if (confirm('정말로 이 세션을 삭제하시겠습니까? 배치된 일정도 초기화됩니다.')) {
+        if (confirm(t('common.confirm_delete'))) {
             this.dataStore.deleteSession(sessionId);
-            this.showNotification('세션이 삭제되었습니다', 'info');
+            this.showNotification(t('notification.session_deleted'), 'info');
             this.updateAllViews();
         }
     }
@@ -1012,7 +1021,7 @@ class TimeTetrisApp {
             session.enabled = !session.enabled;
             this.dataStore.saveToLocalStorage();
             this.updateAllViews();
-            this.showNotification(`세션이 ${session.enabled ? '활성화' : '비활성화'}되었습니다`, 'info');
+            this.showNotification(session.enabled ? t('notification.session_activated') : t('notification.session_deactivated'), 'info');
         }
     }
 
@@ -1163,9 +1172,9 @@ class TimeTetrisApp {
             this.dataStore.saveToLocalStorage();
             this.updateAllViews();
             this.updateCalendarEvents();
-            this.showNotification('일정이 다른 세션으로 이동되었습니다', 'success');
+            this.showNotification(t('notification.schedule_moved'), 'success');
         } else {
-            this.showNotification('해당 세션에 더 이상 일정을 추가할 수 없습니다', 'error');
+            this.showNotification(t('notification.session_full'), 'error');
             this.updateCalendarEvents();
         }
     }
@@ -1221,7 +1230,7 @@ class TimeTetrisApp {
                 }
             } catch (error) {
                 console.error('Import error:', error);
-                this.showNotification('올바른 JSON 파일이 아닙니다', 'error');
+                this.showNotification(t('notification.invalid_json'), 'error');
             }
         };
         reader.readAsText(file);
@@ -1231,10 +1240,10 @@ class TimeTetrisApp {
     }
 
     clearAll() {
-        if (confirm('모든 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+        if (confirm(t('common.confirm_delete_all'))) {
             this.dataStore.clearAll();
             this.updateAllViews();
-            this.showNotification('모든 데이터가 삭제되었습니다', 'info');
+            this.showNotification(t('notification.all_data_cleared'), 'info');
         }
     }
 
@@ -1369,6 +1378,47 @@ class TimeTetrisApp {
 - 세션은 활성화/비활성화할 수 있습니다.
 - 데이터는 자동으로 브라우저에 저장됩니다.
 - JSON 파일로 내보내기/불러오기가 가능합니다.`);
+    }
+
+    // ========================
+    // 언어 관리 메서드
+    // ========================
+
+    /**
+     * 언어 선택기 초기화
+     */
+    initializeLanguageSelector() {
+        const languageSelect = document.getElementById('languageSelect');
+        if (languageSelect && window.i18n) {
+            languageSelect.value = window.i18n.getCurrentLanguage();
+        }
+    }
+
+    /**
+     * 언어 변경
+     * @param {string} language - 언어 코드
+     */
+    changeLanguage(language) {
+        if (window.i18n) {
+            window.i18n.setLanguage(language);
+            
+            // DOM 업데이트
+            window.i18n.updateDOM();
+            
+            // 동적 콘텐츠 업데이트
+            this.updateAllViews();
+            
+            // 캘린더 언어 업데이트
+            if (this.calendar) {
+                this.calendar.updateLocale();
+            }
+            
+            // 언어 선택기 업데이트
+            const languageSelect = document.getElementById('languageSelect');
+            if (languageSelect) {
+                languageSelect.value = language;
+            }
+        }
     }
 }
 
