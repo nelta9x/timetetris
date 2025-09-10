@@ -750,11 +750,6 @@ class CustomCalendar {
     }
     
     formatDateRange(startDate, endDate, viewType) {
-        if (!window.i18n) {
-            // Fallback to default formatting
-            return startDate.toLocaleDateString(this.options.locale);
-        }
-        
         const t = window.i18n.t.bind(window.i18n);
         
         if (viewType === 'day') {
@@ -798,14 +793,6 @@ class CustomCalendar {
     }
     
     getMonthName(month, short = false) {
-        if (!window.i18n) {
-            // Fallback for when i18n is not available
-            const monthNames = short 
-                ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-                : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            return monthNames[month - 1];
-        }
-        
         const t = window.i18n.t.bind(window.i18n);
         const key = short ? `calendar.month.short.${month}` : `calendar.month.${month}`;
         return t(key);
