@@ -45,6 +45,12 @@ class TimeTetrisApp {
         /** @type {string|null} 현재 편집 중인 세션의 ID */
         this.editingSessionId = null;
         
+        /** @type {NotificationManager} 알림 관리자 */
+        this.notifications = new NotificationManager({
+            position: 'bottom-left',
+            duration: 1300,
+            maxNotifications: 5
+        });
         
         // 애플리케이션 초기화
         this.init();
@@ -507,13 +513,13 @@ class TimeTetrisApp {
         });
         
         if (!canFit) {
-            this.showNotification(`${participant.name}님의 가능 시간이 세션 시간과 맞지 않습니다`, 'error');
+            this.showNotification(t('notification.time_not_match', participant.name), 'error');
             return;
         }
         
         // 세션 용량 확인
         if ((session.assignedParticipants || []).length >= (session.capacity || 1)) {
-            this.showNotification(`세션 정원이 초과되었습니다 (최대 ${session.capacity || 1}명)`, 'warning');
+            this.showNotification(t('notification.session_capacity_exceeded', session.capacity || 1), 'warning');
             return;
         }
         
@@ -535,7 +541,7 @@ class TimeTetrisApp {
         const availableSlots = capacity - currentCount;
         
         if (availableSlots <= 0) {
-            this.showNotification('세션이 이미 가득 찼습니다', 'warning');
+            this.showNotification(t('notification.session_full_already'), 'warning');
             return;
         }
         
@@ -554,7 +560,7 @@ class TimeTetrisApp {
         });
         
         if (availableParticipants.length === 0) {
-            this.showNotification('배치 가능한 참가자가 없습니다', 'info');
+            this.showNotification(t('notification.no_available_participants'), 'info');
             return;
         }
         
@@ -792,11 +798,11 @@ class TimeTetrisApp {
                     });
                 } else {
                     hasInvalidSlot = true;
-                    this.showNotification(`${index + 1}번째 시간대: 종료 시간이 시작 시간보다 늦어야 합니다.`, 'error');
+                    this.showNotification(t('notification.invalid_time_slot_order', index + 1), 'error');
                 }
             } else if (startDatetime || endDatetime) {
                 hasInvalidSlot = true;
-                this.showNotification(`${index + 1}번째 시간대: 시작 시간과 종료 시간을 모두 입력해주세요.`, 'error');
+                this.showNotification(t('notification.incomplete_time_slot', index + 1), 'error');
             }
         });
         
@@ -813,11 +819,11 @@ class TimeTetrisApp {
 
         if (this.editingParticipantId) {
             this.dataStore.updateParticipant(this.editingParticipantId, participantData);
-            this.showNotification('참가자가 수정되었습니다', 'success');
+            this.showNotification(t('notification.participant_updated'), 'success');
         } else {
             const participant = new Participant(participantData);
             this.dataStore.addParticipant(participant);
-            this.showNotification('참가자가 추가되었습니다', 'success');
+            this.showNotification(t('notification.participant_added'), 'success');
         }
 
         this.closeParticipantModal();
@@ -935,7 +941,7 @@ class TimeTetrisApp {
         
         // DataStore에 새로운 순서 저장
         this.dataStore.reorderParticipants(newOrder);
-        this.showNotification('참가자 순서가 변경되었습니다', 'success');
+        this.showNotification(t('notification.participant_order_changed'), 'success');
     }
 
     // 세션 관리 메서드
@@ -992,11 +998,11 @@ class TimeTetrisApp {
 
         if (this.editingSessionId) {
             this.dataStore.updateSession(this.editingSessionId, sessionData);
-            this.showNotification('세션이 수정되었습니다', 'success');
+            this.showNotification(t('notification.session_updated'), 'success');
         } else {
             const session = new Session(sessionData);
             this.dataStore.addSession(session);
-            this.showNotification('세션이 추가되었습니다', 'success');
+            this.showNotification(t('notification.session_added'), 'success');
         }
 
         this.closeSessionModal();
@@ -1045,7 +1051,7 @@ class TimeTetrisApp {
             }
             this.dataStore.saveToLocalStorage();
             this.updateAllViews();
-            this.showNotification('배치가 취소되었습니다', 'info');
+            this.showNotification(t('notification.assignment_cancelled'), 'info');
         }
     }
 
@@ -1146,7 +1152,7 @@ class TimeTetrisApp {
             
             this.dataStore.updateSession(session.id, session);
             this.updateAllViews();
-            this.showNotification('세션 시간이 변경되었습니다', 'success');
+            this.showNotification(t('notification.session_time_changed'), 'success');
         }
     }
     
@@ -1208,7 +1214,7 @@ class TimeTetrisApp {
         a.download = `timetetris_${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
-        this.showNotification('데이터가 내보내기되었습니다', 'success');
+        this.showNotification(t('notification.data_exported'), 'success');
     }
 
     importData() {
@@ -1224,9 +1230,9 @@ class TimeTetrisApp {
                 const data = JSON.parse(e.target.result);
                 if (this.dataStore.importData(data)) {
                     this.updateAllViews();
-                    this.showNotification('데이터를 성공적으로 불러왔습니다', 'success');
+                    this.showNotification(t('notification.data_imported'), 'success');
                 } else {
-                    this.showNotification('데이터 불러오기에 실패했습니다', 'error');
+                    this.showNotification(t('notification.import_failed'), 'error');
                 }
             } catch (error) {
                 console.error('Import error:', error);
@@ -1291,30 +1297,7 @@ class TimeTetrisApp {
     }
 
     showNotification(message, type = 'info') {
-        // 간단한 알림 표시 (추후 더 나은 UI로 개선 가능)
-        // 임시 알림 표시
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            padding: 12px 20px;
-            background: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : type === 'warning' ? '#F59E0B' : '#3B82F6'};
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
+        return this.notifications.show(message, type);
     }
 
     closeAllModals() {
@@ -1419,14 +1402,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 애니메이션 스타일 추가
     const style = document.createElement('style');
     style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
         .assigned-in-session {
             margin-top: 8px;
             padding: 8px;

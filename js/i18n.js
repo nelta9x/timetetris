@@ -48,7 +48,7 @@ class I18n {
                 'header.clear': '모두 지우기',
 
                 // 통계
-                'stats.participants': '참가자: {0} (세션에 배치: {1})',
+                'stats.participants': '참가자: {0} (배치됨: {1})',
                 'stats.sessions': '세션: {0}',
 
                 // 참가자 관리
@@ -181,6 +181,8 @@ class I18n {
                 'notification.assignment_cleared': '모든 배치가 초기화되었습니다',
                 'notification.auto_assign_complete': '전체 자동 배치가 완료되었습니다. {0}명이 배치되었습니다',
                 'notification.participant_saved': '참가자가 저장되었습니다',
+                'notification.participant_added': '참가자가 추가되었습니다',
+                'notification.participant_updated': '참가자가 수정되었습니다',
                 'notification.participant_deleted': '참가자가 삭제되었습니다',
                 'notification.session_saved': '세션이 저장되었습니다',
                 'notification.session_deleted': '세션이 삭제되었습니다',
@@ -189,6 +191,20 @@ class I18n {
                 'notification.all_data_cleared': '모든 데이터가 삭제되었습니다',
                 'notification.schedule_moved': '일정이 다른 세션으로 이동되었습니다',
                 'notification.invalid_json': '올바른 JSON 파일이 아닙니다',
+                'notification.session_full_already': '세션이 이미 가득 찼습니다',
+                'notification.no_available_participants': '배치 가능한 참가자가 없습니다',
+                'notification.participant_order_changed': '참가자 순서가 변경되었습니다',
+                'notification.session_added': '세션이 추가되었습니다',
+                'notification.session_updated': '세션이 수정되었습니다',
+                'notification.assignment_cancelled': '배치가 취소되었습니다',
+                'notification.session_time_changed': '세션 시간이 변경되었습니다',
+                'notification.data_exported': '데이터가 내보내기되었습니다',
+                'notification.data_imported': '데이터를 성공적으로 불러왔습니다',
+                'notification.import_failed': '데이터 불러오기에 실패했습니다',
+                'notification.time_not_match': '{0}님의 가능 시간이 세션 시간과 맞지 않습니다',
+                'notification.session_capacity_exceeded': '세션 정원이 초과되었습니다 (최대 {0}명)',
+                'notification.invalid_time_slot_order': '{0}번째 시간대: 종료 시간이 시작 시간보다 늦어야 합니다.',
+                'notification.incomplete_time_slot': '{0}번째 시간대: 시작 시간과 종료 시간을 모두 입력해주세요.',
 
                 // 공통
                 'common.required': '*',
@@ -343,6 +359,8 @@ class I18n {
                 'notification.assignment_cleared': 'All assignments have been cleared',
                 'notification.auto_assign_complete': 'Auto-assignment completed. {0} participants assigned',
                 'notification.participant_saved': 'Participant saved',
+                'notification.participant_added': 'Participant added',
+                'notification.participant_updated': 'Participant updated',
                 'notification.participant_deleted': 'Participant deleted',
                 'notification.session_saved': 'Session saved',
                 'notification.session_deleted': 'Session deleted',
@@ -351,6 +369,20 @@ class I18n {
                 'notification.all_data_cleared': 'All data has been cleared',
                 'notification.schedule_moved': 'Schedule moved to another session',
                 'notification.invalid_json': 'Invalid JSON file',
+                'notification.session_full_already': 'Session is already full',
+                'notification.no_available_participants': 'No available participants for assignment',
+                'notification.participant_order_changed': 'Participant order changed',
+                'notification.session_added': 'Session added',
+                'notification.session_updated': 'Session updated',
+                'notification.assignment_cancelled': 'Assignment cancelled',
+                'notification.session_time_changed': 'Session time changed',
+                'notification.data_exported': 'Data exported successfully',
+                'notification.data_imported': 'Data imported successfully',
+                'notification.import_failed': 'Failed to import data',
+                'notification.time_not_match': '{0}\'s available time does not match session time',
+                'notification.session_capacity_exceeded': 'Session capacity exceeded (max {0} participants)',
+                'notification.invalid_time_slot_order': 'Time slot {0}: End time must be later than start time.',
+                'notification.incomplete_time_slot': 'Time slot {0}: Please enter both start and end times.',
 
                 // Common
                 'common.required': '*',
