@@ -733,36 +733,82 @@ class CustomCalendar {
         
         switch(this.options.view) {
             case 'day':
-                text = this.currentDate.toLocaleDateString(this.options.locale, {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'long'
-                });
+                text = this.formatDateRange(this.currentDate, this.currentDate, 'day');
                 break;
             case 'week':
                 const weekStart = this.getWeekStart(this.currentDate);
                 const weekEnd = new Date(weekStart);
                 weekEnd.setDate(weekEnd.getDate() + 6);
-                
-                text = `${weekStart.toLocaleDateString(this.options.locale, {
-                    month: 'short',
-                    day: 'numeric'
-                })} - ${weekEnd.toLocaleDateString(this.options.locale, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                })}`;
+                text = this.formatDateRange(weekStart, weekEnd, 'week');
                 break;
             case 'month':
-                text = this.currentDate.toLocaleDateString(this.options.locale, {
-                    year: 'numeric',
-                    month: 'long'
-                });
+                text = this.formatDateRange(this.currentDate, this.currentDate, 'month');
                 break;
         }
         
         display.textContent = text;
+    }
+    
+    formatDateRange(startDate, endDate, viewType) {
+        if (!window.i18n) {
+            // Fallback to default formatting
+            return startDate.toLocaleDateString(this.options.locale);
+        }
+        
+        const t = window.i18n.t.bind(window.i18n);
+        
+        if (viewType === 'day') {
+            const year = startDate.getFullYear();
+            const month = startDate.getMonth() + 1;
+            const day = startDate.getDate();
+            const weekday = startDate.getDay();
+            
+            const weekdayName = t(`calendar.weekday.${weekday}`);
+            const monthName = this.getMonthName(month, false);
+            
+            return t('calendar.format.day', year, monthName, day, weekdayName);
+                
+        } else if (viewType === 'week') {
+            const startYear = startDate.getFullYear();
+            const startMonth = startDate.getMonth() + 1;
+            const startDay = startDate.getDate();
+            const endYear = endDate.getFullYear();
+            const endMonth = endDate.getMonth() + 1;
+            const endDay = endDate.getDate();
+            
+            // 주간 뷰에서는 short 형태 사용
+            const startMonthName = this.getMonthName(startMonth, true);
+            const endMonthName = this.getMonthName(endMonth, true);
+            
+            if (startYear === endYear) {
+                return t('calendar.format.week_same_year', startMonthName, startDay, endYear, endMonthName, endDay);
+            } else {
+                return t('calendar.format.week_diff_year', startYear, startMonthName, startDay, endYear, endMonthName, endDay);
+            }
+            
+        } else if (viewType === 'month') {
+            const year = startDate.getFullYear();
+            const month = startDate.getMonth() + 1;
+            const monthName = this.getMonthName(month, false);
+            
+            return t('calendar.format.month', year, monthName);
+        }
+        
+        return '';
+    }
+    
+    getMonthName(month, short = false) {
+        if (!window.i18n) {
+            // Fallback for when i18n is not available
+            const monthNames = short 
+                ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            return monthNames[month - 1];
+        }
+        
+        const t = window.i18n.t.bind(window.i18n);
+        const key = short ? `calendar.month.short.${month}` : `calendar.month.${month}`;
+        return t(key);
     }
     
     attachEventListeners() {
