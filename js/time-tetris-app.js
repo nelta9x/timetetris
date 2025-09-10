@@ -131,9 +131,8 @@ class TimeTetrisApp {
 
     updateHeader() {
         const stats = this.dataStore.getStatistics();
-        document.getElementById('participantCount').textContent = `참가자 수: ${stats.totalParticipants}`;
-        document.getElementById('sessionCount').textContent = `세션 수: ${stats.totalSessions}`;
-        document.getElementById('assignedCount').textContent = `배치완료: ${stats.assignedParticipants}`;
+        document.getElementById('participantCount').textContent = `참가자: ${stats.totalParticipants} (세션에 배치: ${stats.assignedParticipants})`;
+        document.getElementById('sessionCount').textContent = `세션: ${stats.totalSessions}`;
     }
 
     updateParticipantsList() {
