@@ -45,21 +45,17 @@ class Participant {
      * @returns {Array} 기본 시간대 배열 (1개 요소)
      */
     createDefaultTimeSlot() {
-        const now = new Date();
-        // 다음 주 월요일 09:00으로 기본 시작 시간 설정
-        const nextMonday = new Date(now);
-        nextMonday.setDate(now.getDate() + (1 + 7 - now.getDay()) % 7);
-        nextMonday.setHours(9, 0, 0, 0);
+        // 시작 시간은 현재 시간으로 설정
+        const startTime = new Date();
         
-        // 기본 종료 시간은 시작 시간 + 2시간
-        const endTime = new Date(nextMonday);
-        endTime.setHours(11, 0, 0, 0);
+        // 종료 시간은 현재 시간 + 1시간
+        const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1시간 추가
         
         // 지속 시간 계산 (분 단위)
-        const duration = (endTime.getTime() - nextMonday.getTime()) / 60000;
+        const duration = (endTime.getTime() - startTime.getTime()) / 60000;
         
         return [{
-            datetime: nextMonday.toISOString(),
+            datetime: startTime.toISOString(),
             duration: duration
         }];
     }
