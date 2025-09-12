@@ -1315,47 +1315,6 @@ class TimeTetrisApp {
     }
 
     // ========================
-    // 하위 호환성 메서드들
-    // ========================
-
-    /**
-     * @deprecated 하위 호환성을 위한 메서드. showParticipantModal을 사용하세요.
-     */
-    showScheduleModal(scheduleId = null) {
-        return this.showParticipantModal(scheduleId);
-    }
-
-    /**
-     * @deprecated 하위 호환성을 위한 메서드. closeParticipantModal을 사용하세요.
-     */
-    closeScheduleModal() {
-        return this.closeParticipantModal();
-    }
-
-    /**
-     * @deprecated 하위 호환성을 위한 메서드. saveParticipant를 사용하세요.
-     */
-    saveSchedule() {
-        return this.saveParticipant();
-    }
-
-    /**
-     * @deprecated 하위 호환성을 위한 메서드. editParticipant를 사용하세요.
-     */
-    editSchedule(scheduleId) {
-        return this.editParticipant(scheduleId);
-    }
-
-    /**
-     * @deprecated 하위 호환성을 위한 메서드. deleteParticipant를 사용하세요.
-     */
-    deleteSchedule(scheduleId) {
-        return this.deleteParticipant(scheduleId);
-    }
-
-
-
-    // ========================
     // 언어 관리 메서드
     // ========================
 

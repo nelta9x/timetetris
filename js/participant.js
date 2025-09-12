@@ -119,16 +119,6 @@ class Participant {
     }
 
     /**
-     * 참가자가 현재 배치되어 있는지 확인
-     * @deprecated DataStore.isParticipantAssigned(participantId)를 사용하세요
-     * @returns {boolean} 배치되어 있으면 false (항상 false 반환)
-     */
-    isAssigned() {
-        // assignedSession 제거됨 - DataStore에서 확인해야 함
-        return false;
-    }
-
-    /**
      * 가능한 시간대 추가
      * @param {Object} slot - 시간대 객체
      * @param {string} slot.datetime - 시작 시간 (ISO 문자열)
