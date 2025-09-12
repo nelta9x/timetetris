@@ -36,7 +36,7 @@ class Participant {
      * @returns {string} 고유한 참가자 ID
      */
     generateGUID() {
-        return 'participant-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        return 'participant-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
     }
 
     /**
@@ -45,17 +45,13 @@ class Participant {
      * @returns {Array} 기본 시간대 배열 (1개 요소)
      */
     createDefaultTimeSlot() {
-        // 시작 시간은 현재 시간으로 설정
-        const startTime = new Date();
+        const now = new Date();
         
-        // 종료 시간은 현재 시간 + 1시간
-        const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1시간 추가
-        
-        // 지속 시간 계산 (분 단위)
-        const duration = (endTime.getTime() - startTime.getTime()) / 60000;
+        // 지속 시간: 1시간 (60분)
+        const duration = 60;
         
         return [{
-            datetime: startTime.toISOString(),
+            datetime: now.toISOString(),
             duration: duration
         }];
     }
@@ -135,11 +131,9 @@ class Participant {
             this.availableSlots.splice(index, 1);
         }
     }
+}
 
-    /**
-     * 배치된 세션 해제
-     */
-    unassign() {
-        this.assignedSession = null;
-    }
+// 전역으로 노출
+if (typeof window !== 'undefined') {
+    window.Participant = Participant;
 }

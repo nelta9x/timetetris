@@ -47,7 +47,7 @@ class TimeTetrisApp {
         
         /** @type {NotificationManager} 알림 관리자 */
         this.notifications = new NotificationManager({
-            position: 'bottom-left',
+            position: 'top-left',
             duration: 1300,
             maxNotifications: 5
         });
@@ -1077,7 +1077,6 @@ class TimeTetrisApp {
         // 캘린더 생성
         this.calendar = new CustomCalendar('customCalendar', {
             view: 'week',
-            locale: 'ko-KR',
             onEventClick: (event, e) => {
                 if (event.type === 'session') {
                     this.editSession(event.id);

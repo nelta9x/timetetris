@@ -8,7 +8,7 @@
 class NotificationManager {
     constructor(options = {}) {
         this.options = {
-            position: 'bottom-left', // 'top-left', 'top-right', 'bottom-left', 'bottom-right'
+            position: 'top-left', // 'top-left', 'top-right', 'bottom-left', 'bottom-right'
             duration: 2000,          // 표시 시간 (ms)
             maxNotifications: 5,     // 동시 표시 최대 개수
             ...options
@@ -214,7 +214,6 @@ class NotificationManager {
      */
     getInAnimation() {
         const isBottom = this.options.position.includes('bottom');
-        const isRight = this.options.position.includes('right');
         
         if (isBottom) {
             return 'notificationSlideInUp 0.3s ease';
@@ -228,7 +227,6 @@ class NotificationManager {
      */
     getOutAnimation() {
         const isBottom = this.options.position.includes('bottom');
-        const isRight = this.options.position.includes('right');
         
         if (isBottom) {
             return 'notificationSlideOutDown 0.3s ease';
@@ -333,7 +331,7 @@ window.NotificationManager = NotificationManager;
 
 // 기본 인스턴스 생성 (편의를 위해)
 window.notifications = new NotificationManager({
-    position: 'bottom-left',
+    position: 'top-left',
     duration: 2000,
     maxNotifications: 5
 });

@@ -26,8 +26,8 @@ class CustomCalendar {
             ...options
         };
 
-        // 현재 날짜를 테스트 데이터 날짜로 설정 (임시)
-        this.currentDate = new Date('2025-09-07T12:00:00');
+        // 현재 날짜로 설정
+        this.currentDate = new Date();
         this.events = [];
         this.draggedElement = null;
         this.draggedData = null;

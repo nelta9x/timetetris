@@ -163,20 +163,11 @@ class DataStore {
      * @returns {boolean} 삭제 성공 여부
      */
     deleteSession(id) {
-        const session = this.sessions.get(id);
-        if (session) {
-            // 배치된 참가자들의 배치 상태 초기화
-            session.assignedParticipants.forEach(participantId => {
-                const participant = this.participants.get(participantId);
-                if (participant) {
-                    participant.assignedSession = null;
-                }
-            });
-            this.sessions.delete(id);
+        const deleted = this.sessions.delete(id);
+        if (deleted) {
             this.saveToLocalStorage();
-            return true;
         }
-        return false;
+        return deleted;
     }
 
     /**
@@ -399,7 +390,9 @@ class DataStore {
      * @returns {Session[]} 비어있는 세션 배열
      */
     getEmptySessions() {
-        return Array.from(this.sessions.values()).filter(session => session.isEmpty());
+        return Array.from(this.sessions.values()).filter(session => 
+            !session.assignedParticipants || session.assignedParticipants.length === 0
+        );
     }
 
     /**
@@ -407,6 +400,8 @@ class DataStore {
      * @returns {Session[]} 완전히 채워진 세션 배열
      */
     getFullSessions() {
-        return Array.from(this.sessions.values()).filter(session => session.isFull());
+        return Array.from(this.sessions.values()).filter(session => 
+            session.assignedParticipants && session.assignedParticipants.length >= (session.capacity || 1)
+        );
     }
 }
